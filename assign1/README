@@ -1,4 +1,12 @@
-to run rviz:
-ros2 launch assign1 display.launch.py
+## Run the project
 
+To launch RViz:
+
+```bash
+ros2 launch assign1 display.launch.py
+```
+To launch gazebo:
+
+```bash
 ros2 launch assign1 gazebo.launch.py
+```
