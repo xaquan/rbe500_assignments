@@ -1,5 +1,12 @@
 ## Run the Assignment 1
 
+Build the packages and source it:
+
+```bash
+colcon build
+source install/setup.bash
+```
+
 To launch RViz:
 
 ```bash
