@@ -1,0 +1,4 @@
+to run rviz:
+ros2 launch assign1 display.launch.py
+
+ros2 launch assign1 gazebo.launch.py
