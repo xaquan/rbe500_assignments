@@ -1,0 +1,18 @@
+## Run the Assignment 1
+
+Build the packages and source it:
+
+```bash
+colcon build
+source install/setup.bash
+```
+
+To launch RViz:
+
+```bash
+ros2 launch assign1 display.launch.py
+```
+To launch gazebo:
+
+```bash
+ros2 launch assign1 gazebo.launch.py
