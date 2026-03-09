@@ -52,13 +52,20 @@ def generate_launch_description():
     )
 
     gazebo = IncludeLaunchDescription(
-        PathJoinSubstitution([FindPackageShare('gazebo_ros'), 'launch', 'gazebo.launch.py']),
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('ros_gz_sim'), 
+                'launch', 
+                'gz_sim.launch.py'
+            ])
+        ]),
         launch_arguments={
-            'gui': LaunchConfiguration('gui'),
-            'pause': LaunchConfiguration('pause'),
+            # 'gz_args': '-r empty.sdf'  # -r runs on start, empty.sdf is the world
+            # To handle the GUI toggle similar to your old code:
+            'gz_args': LaunchConfiguration('gz_args'), 
         }.items(),
     )
-
+    
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",

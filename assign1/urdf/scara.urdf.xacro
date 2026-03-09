@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<robot name="scara_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:property name="d1" value=".6" />
+    <xacro:property name="a1" value=".6" />
+    <xacro:property name="a2" value=".6" />
+    <xacro:property name="d3" value=".3" />
+
+    <xacro:property name="link3_limit" value=".3" />
+    <xacro:property name="ee_r" value=".05" />
+    <xacro:property name="ee_l" value="${d3}" />   
+    
+    <xacro:property name="cyl_joint_r" value=".1" />
+    <xacro:property name="cyl_joint_l" value=".2" />
+
+    <xacro:property name="link_r" value=".1" />
+
+    <xacro:property name="prismatic_link_a" value=".2" />
+
+
+    <xacro:property name="base_link_l" value=".5" />
+    <xacro:property name="base_link_w" value=".5" />
+    <xacro:property name="base_link_h" value="0.1" />
+
+    <xacro:property name="link1_l" value="${d1}" />
+    <xacro:property name="link1_r" value="${link_r}" />
+    <xacro:property name="link1_theta" value="0" />
+    <xacro:property name="link1_d" value="${base_link_h}" />
+    <xacro:property name="link1_a" value="0" />
+    <xacro:property name="link1_alpha" value="0" />
+
+    <xacro:property name="link1_arm_l" value="${a1}" />
+    <xacro:property name="link1_arm_w" value="${link_r *2}" />   
+    <xacro:property name="link1_arm_h" value="${link_r}" />
+    <!-- <xacro:property name="link1_arm_theta" value="0" />
+    <xacro:property name="link1_arm_d" value="${link1_l}" />
+    <xacro:property name="link1_arm_a" value="0" />
+    <xacro:property name="link1_arm_alpha" value="0" /> -->
+
+    <xacro:property name="link2_l" value="${cyl_joint_l}" />
+    <xacro:property name="link2_r" value="${cyl_joint_r}" />
+    <xacro:property name="link2_theta" value="0" />
+    <xacro:property name="link2_d" value="0" />
+    <xacro:property name="link2_a" value="${a1}" />
+    <xacro:property name="link2_alpha" value="0" />
+
+    <xacro:property name="link2_arm_l" value="${a2}" />
+    <xacro:property name="link2_arm_w" value="${link_r *2}" />   
+    <xacro:property name="link2_arm_h" value="${link_r}" />
+
+    <xacro:property name="link3_arm_l" value="${prismatic_link_a}" />
+    <xacro:property name="link3_arm_w" value="${prismatic_link_a}" />  
+    <xacro:property name="link3_arm_h" value="${prismatic_link_a + link3_limit}" />
+    <xacro:property name="link3_theta" value="0" />
+    <xacro:property name="link3_d" value="0" />
+    <xacro:property name="link3_a" value="${a2}" />
+    <xacro:property name="link3_alpha" value="0" />
+    <xacro:property name="link3_limit_lower" value="0" />
+    <xacro:property name="link3_limit_upper" value="${link3_limit}" />
+
+    <xacro:property name="link4_l" value="${ee_l}" />
+    <xacro:property name="link4_r" value="${ee_r}" />
+    <xacro:property name="link4_theta" value="0" />
+    <xacro:property name="link4_d" value="${-d3}" />
+    <xacro:property name="link4_a" value="0" />
+    <xacro:property name="link4_alpha" value="${pi}" />
+
+
+    <xacro:macro name="inertial_box" params="mass x y z *origin">
+        <inertial>
+            <xacro:insert_block name="origin"/>
+            <mass value="${mass}" />
+            <inertia ixx="${(1/12) * mass * (y*y+z*z)}" ixy="0.0" ixz="0.0"
+                    iyy="${(1/12) * mass * (x*x+z*z)}" iyz="0.0"
+                    izz="${(1/12) * mass * (x*x+y*y)}" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="inertial_cylinder" params="mass length radius *origin">
+        <inertial>
+            <xacro:insert_block name="origin"/>
+            <mass value="${mass}" />
+            <inertia ixx="${(1/12) * mass * (3*radius*radius + length*length)}" ixy="0.0" ixz="0.0"
+                    iyy="${(1/12) * mass * (3*radius*radius + length*length)}" iyz="0.0"
+                    izz="${(1/2) * mass * (radius*radius)}" />
+        </inertial>
+    </xacro:macro>
+
+    <link name="world_link"/>
+
+    <joint name="world_to_base" type="fixed">
+    <parent link="world_link"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="base_link">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 ${base_link_h/2}" />
+            <geometry>
+                <box size="${base_link_l} ${base_link_w} ${base_link_h}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 ${base_link_h/2}" />
+            <geometry>
+                <box size="${base_link_l} ${base_link_w} ${base_link_h}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="10" x="${base_link_l}" y="${base_link_w}" z="${base_link_h}">
+            <origin rpy="0 0 0" xyz="0 0 ${base_link_h/2}" />
+        </xacro:inertial_box>
+    </link>    
+
+    <joint name="joint1" type="revolute">
+        <parent link="base_link" />
+        <child link="link1" />
+        <origin rpy="0 0 0" xyz="0 0 ${link1_d}" />
+        <axis xyz="0 0 1" />
+        <limit lower="${-5*pi/6}" upper="${5*pi/6}" effort="100" velocity="5.0" />
+        <dynamics damping="0.1" friction="0.1"/>
+    </joint>
+
+    <link name="link1">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
+            <geometry>
+                <cylinder length="${link1_l}" radius="${link1_r}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
+            <geometry>
+                <cylinder length="${link1_l}" radius="${link1_r}" />
+            </geometry>
+        </collision>        
+        <xacro:inertial_cylinder mass="0.01" length="${link1_l}" radius="${link1_r}">
+            <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
+        </xacro:inertial_cylinder>
+
+         <visual>
+            <origin rpy="0 0 0" xyz="${link1_arm_l/2} 0 ${link1_l}" />
+            <geometry>
+                <box size="${link1_arm_l} ${link1_arm_w} ${link1_arm_h}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="${link1_arm_l/2} 0 ${link1_l}" />
+            <geometry>                
+                <box size="${link1_arm_l - cyl_joint_r * 2} ${link1_arm_w} ${link1_arm_h}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="0.01" x="${link1_arm_l}" y="${link1_arm_w}" z="${link1_arm_h}">
+            <origin rpy="0 0 0" xyz="${link1_arm_l/2} 0 0" />
+        </xacro:inertial_box>
+    </link>
+
+    <link name="link2">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${link2_l}" radius="${link2_r}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="${link2_l}" radius="${link2_r}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.01" length="${link2_l}" radius="${link2_r}">
+            <origin rpy="0 0 0" xyz="0 0 0" />
+        </xacro:inertial_cylinder>
+
+        <visual>
+            <origin rpy="0 0 0" xyz="${link2_arm_l/2} 0 0" />
+            <geometry>
+                <box size="${link2_arm_l} ${link2_arm_w} ${link2_arm_h}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="${link2_arm_l/2} 0 0" />
+            <geometry>                
+                <box size="${link2_arm_l - prismatic_link_a} ${link2_arm_w} ${link2_arm_h}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="0.01" x="${link2_arm_l}" y="${link2_arm_w}" z="${link2_arm_h}">
+            <origin rpy="0 0 0" xyz="${link2_arm_l/2} 0 0" />
+        </xacro:inertial_box>
+    </link>
+
+    <joint name="joint2" type="revolute">
+        <parent link="link1" />
+        <child link="link2" />
+        <origin rpy="0 0 0" xyz="${a1} 0 ${d1}" />
+        <limit lower="${-pi/2}" upper="${pi/2}" effort="100" velocity="1.0" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <link name="link3">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
+            <geometry>
+                <box size="${link3_arm_l} ${link3_arm_w} ${link3_arm_h}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
+            <geometry>
+                <box size="${link3_arm_l} ${link3_arm_w} ${link3_arm_h}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="0.01" x="${link3_arm_l}" y="${link3_arm_w}" z="${link3_arm_h}">
+            <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
+        </xacro:inertial_box>        
+    </link>
+
+    <joint name="joint3" type="prismatic">
+        <parent link="link2" />
+        <child link="link3" />
+        <origin rpy="0 0 0" xyz="${link3_a} 0 0" />
+        <limit lower="${link3_limit_lower}" upper="${link3_limit_upper}" effort="100" velocity="5" />
+        <axis xyz="0 0 -1" />
+    </joint>
+
+    <link name="link4">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
+            <geometry>
+                <cylinder length="${link4_l}" radius="${link4_r}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 ${-(link4_l - prismatic_link_a/2)/2}" />
+            <geometry>                
+                <cylinder length="${link4_l - prismatic_link_a/2}" radius="${link4_r}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.01" length="${link4_l}" radius="${link4_r}">
+            <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
+        </xacro:inertial_cylinder>
+    </link>
+
+    <joint name="joint4" type="fixed">
+        <parent link="link3" />
+        <child link="link4" />
+        <origin rpy="${link4_alpha} 0 ${link4_theta}" xyz="0 0 ${link4_d}" />
+        <axis xyz="0 0 1" />
+    </joint>
+
+     <!-- Use for GUI control -->
+    <!-- <gazebo>
+        <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+            <joint_name>joint1</joint_name>
+            <use_velocity_commands>true</use_velocity_commands>
+            <cmd_max>1.0</cmd_max>
+        </plugin>
+
+        <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+            <joint_name>joint2</joint_name>
+            <use_velocity_commands>true</use_velocity_commands>
+            <cmd_max>1.0</cmd_max>
+        </plugin>
+
+        <plugin filename="gz-sim-joint-position-controller-system"
+            name="gz::sim::systems::JointPositionController">
+            <joint_name>joint3</joint_name>
+            <use_velocity_commands>true</use_velocity_commands>
+            <cmd_max>1.0</cmd_max>
+        </plugin>         
+    </gazebo> -->
+
+    <gazebo>
+        <plugin
+            filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+            <topic>/joint_states</topic>
+        </plugin>
+
+        <plugin
+            filename="gz-sim-pose-publisher-system"
+            name="gz::sim::systems::PosePublisher">
+            <publish_link_pose>true</publish_link_pose>
+            <publish_sensor_pose>false</publish_sensor_pose>
+            <publish_collision_pose>false</publish_collision_pose>
+            <publish_visual_pose>false</publish_visual_pose>
+            <publish_nested_model_pose>false</publish_nested_model_pose>
+            <use_pose_vector_msg>true</use_pose_vector_msg>
+        </plugin>
+
+        <plugin
+            filename="ignition-gazebo-joint-trajectory-controller-system"
+            name="ignition::gazebo::systems::JointTrajectoryController">
+
+            <topic>/model/scara_robot/joint_trajectory</topic>
+
+            <joint_name>joint1</joint_name>
+            <joint_name>joint2</joint_name>
+            <joint_name>joint3</joint_name>
+
+            <initial_position>0.0</initial_position>
+            <initial_position>0.0</initial_position>
+            <initial_position>0.0</initial_position>
+
+            <position_p_gain>20</position_p_gain>
+            <position_p_gain>20</position_p_gain>
+            <position_p_gain>20</position_p_gain>
+
+            <position_i_gain>0.0</position_i_gain>
+            <position_i_gain>0.0</position_i_gain>
+            <position_i_gain>0.0</position_i_gain>
+
+            <position_d_gain>1.0</position_d_gain>
+            <position_d_gain>1.0</position_d_gain>
+            <position_d_gain>1.0</position_d_gain>
+
+            <position_i_min>-1</position_i_min>
+            <position_i_min>-1</position_i_min>
+            <position_i_min>-1</position_i_min>
+
+            <position_i_max>1</position_i_max>
+            <position_i_max>1</position_i_max>
+            <position_i_max>1</position_i_max>
+
+            <position_cmd_min>-50</position_cmd_min>
+            <position_cmd_min>-50</position_cmd_min>
+            <position_cmd_min>-50</position_cmd_min>
+
+            <position_cmd_max>50</position_cmd_max>
+            <position_cmd_max>50</position_cmd_max>
+            <position_cmd_max>50</position_cmd_max>
+        </plugin>
+    </gazebo>
+</robot>

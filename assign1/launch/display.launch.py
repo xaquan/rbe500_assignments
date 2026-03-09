@@ -14,7 +14,7 @@ def generate_launch_description():
     pkg_name = "assign1"
     pkg_share = get_package_share_directory(pkg_name)
 
-    default_model_path = os.path.join(pkg_share, "urdf", "myfirst.urdf.xacro")
+    default_model_path = os.path.join(pkg_share, "urdf", "scara.urdf.xacro")
     default_rviz_config = os.path.join(pkg_share, "rviz", "display.rviz")
 
     declare_model = DeclareLaunchArgument(
