@@ -1,21 +1,6 @@
 <?xml version="1.0"?>
 <robot name="scara_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-
-    <material name="blue">
-        <color rgba="0 0 0.8 1"/>
-    </material>
-    <material name="red">
-        <color rgba="0.8 0 0 1"/>
-    </material>
-    <material name="green">
-        <color rgba="0.0 1.0 0.0 1.0"/>
-    </material>
-
-    <material name="purple">
-        <color rgba="0.5 0.0 0.5 1.0"/>
-    </material>
-
     <xacro:property name="d1" value=".6" />
     <xacro:property name="a1" value=".6" />
     <xacro:property name="a2" value=".6" />
@@ -40,13 +25,12 @@
     <xacro:property name="link1_l" value="${d1}" />
     <xacro:property name="link1_r" value="${link_r}" />
     <xacro:property name="link1_theta" value="0" />
-    <!-- <xacro:property name="link1_d" value="${base_link_h}" /> -->
-     <xacro:property name="link1_d" value="0" />
+    <xacro:property name="link1_d" value="${base_link_h}" />
     <xacro:property name="link1_a" value="0" />
     <xacro:property name="link1_alpha" value="0" />
 
     <xacro:property name="link1_arm_l" value="${a1}" />
-    <xacro:property name="link1_arm_w" value="${link_r}" />   
+    <xacro:property name="link1_arm_w" value="${link_r *2}" />   
     <xacro:property name="link1_arm_h" value="${link_r}" />
 
     <xacro:property name="link2_l" value="${cyl_joint_l}" />
@@ -57,7 +41,7 @@
     <xacro:property name="link2_alpha" value="0" />
 
     <xacro:property name="link2_arm_l" value="${a2}" />
-    <xacro:property name="link2_arm_w" value="${link_r}" />   
+    <xacro:property name="link2_arm_w" value="${link_r *2}" />   
     <xacro:property name="link2_arm_h" value="${link_r}" />
 
     <xacro:property name="link3_arm_l" value="${prismatic_link_a}" />
@@ -119,7 +103,7 @@
                 <box size="${base_link_l} ${base_link_w} ${base_link_h}" />
             </geometry>
         </collision>
-        <xacro:inertial_box mass="100" x="${base_link_l}" y="${base_link_w}" z="${base_link_h}">
+        <xacro:inertial_box mass="10" x="${base_link_l}" y="${base_link_w}" z="${base_link_h}">
             <origin rpy="0 0 0" xyz="0 0 ${base_link_h/2}" />
         </xacro:inertial_box>
     </link>    
@@ -130,7 +114,7 @@
         <origin rpy="0 0 0" xyz="0 0 ${link1_d}" />
         <axis xyz="0 0 1" />
         <limit lower="${-5*pi/6}" upper="${5*pi/6}" effort="100" velocity="5.0" />
-        <dynamics damping="0.1" friction="0.0"/>
+        <dynamics damping="0.1" friction="0.1"/>
     </joint>
 
     <link name="link1">
@@ -139,15 +123,14 @@
             <geometry>
                 <cylinder length="${link1_l}" radius="${link1_r}" />
             </geometry>
-            <material name="green"/>
         </visual>
         <collision>
-            <origin rpy="0 0 0" xyz="0 0 ${link1_l/2 + base_link_h/2}" />
+            <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
             <geometry>
-                <cylinder length="${link1_l - base_link_h}" radius="${link1_r}" />
+                <cylinder length="${link1_l}" radius="${link1_r}" />
             </geometry>
         </collision>        
-        <xacro:inertial_cylinder mass="1" length="${link1_l}" radius="${link1_r}">
+        <xacro:inertial_cylinder mass="10" length="${link1_l}" radius="${link1_r}">
             <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
         </xacro:inertial_cylinder>
 
@@ -163,7 +146,7 @@
                 <box size="${link1_arm_l - cyl_joint_r * 2} ${link1_arm_w} ${link1_arm_h}" />
             </geometry>
         </collision>
-        <xacro:inertial_box mass="0.5" x="${link1_arm_l}" y="${link1_arm_w}" z="${link1_arm_h}">
+        <xacro:inertial_box mass="0.01" x="${link1_arm_l}" y="${link1_arm_w}" z="${link1_arm_h}">
             <origin rpy="0 0 0" xyz="${link1_arm_l/2} 0 0" />
         </xacro:inertial_box>
     </link>
@@ -174,7 +157,6 @@
             <geometry>
                 <cylinder length="${link2_l}" radius="${link2_r}" />
             </geometry>
-            <material name="blue"/>
         </visual>
         <collision>
             <origin rpy="0 0 0" xyz="0 0 0" />
@@ -182,7 +164,7 @@
                 <cylinder length="${link2_l}" radius="${link2_r}" />
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.5" length="${link2_l}" radius="${link2_r}">
+        <xacro:inertial_cylinder mass="0.01" length="${link2_l}" radius="${link2_r}">
             <origin rpy="0 0 0" xyz="0 0 0" />
         </xacro:inertial_cylinder>
 
@@ -198,7 +180,7 @@
                 <box size="${link2_arm_l - prismatic_link_a} ${link2_arm_w} ${link2_arm_h}" />
             </geometry>
         </collision>
-        <xacro:inertial_box mass="0.5" x="${link2_arm_l}" y="${link2_arm_w}" z="${link2_arm_h}">
+        <xacro:inertial_box mass="0.01" x="${link2_arm_l}" y="${link2_arm_w}" z="${link2_arm_h}">
             <origin rpy="0 0 0" xyz="${link2_arm_l/2} 0 0" />
         </xacro:inertial_box>
     </link>
@@ -217,7 +199,6 @@
             <geometry>
                 <box size="${link3_arm_l} ${link3_arm_w} ${link3_arm_h}" />
             </geometry>
-            <material name="red"/>
         </visual>
         <collision>
             <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
@@ -225,10 +206,25 @@
                 <box size="${link3_arm_l} ${link3_arm_w} ${link3_arm_h}" />
             </geometry>
         </collision>
-        <xacro:inertial_box mass="0.5" x="${link3_arm_l}" y="${link3_arm_w}" z="${link3_arm_h}">
+        <xacro:inertial_box mass="0.01" x="${link3_arm_l}" y="${link3_arm_w}" z="${link3_arm_h}">
             <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
         </xacro:inertial_box>      
         
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
+            <geometry>
+                <cylinder length="${link4_l}" radius="${link4_r}" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 ${-(link4_l - prismatic_link_a/2)/2}" />
+            <geometry>                
+                <cylinder length="${link4_l - prismatic_link_a/2}" radius="${link4_r}" />
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="0.01" length="${link4_l}" radius="${link4_r}">
+            <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
+        </xacro:inertial_cylinder>
     </link>
 
     <joint name="joint3" type="prismatic">
@@ -239,13 +235,12 @@
         <axis xyz="0 0 -1" />
     </joint>
 
-    <link name="link4">
+    <!-- <link name="link4">
         <visual>
             <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
             <geometry>
                 <cylinder length="${link4_l}" radius="${link4_r}" />
             </geometry>
-            <material name="purple"/>
         </visual>
         <collision>
             <origin rpy="0 0 0" xyz="0 0 ${-(link4_l - prismatic_link_a/2)/2}" />
@@ -253,20 +248,20 @@
                 <cylinder length="${link4_l - prismatic_link_a/2}" radius="${link4_r}" />
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.5" length="${link4_l}" radius="${link4_r}">
+        <xacro:inertial_cylinder mass="0.01" length="${link4_l}" radius="${link4_r}">
             <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
         </xacro:inertial_cylinder>
     </link>
 
-    <joint name="joint4" type="fixed">
+    <joint name="joint4" type="continuous">
         <parent link="link3" />
         <child link="link4" />
         <origin rpy="${link4_alpha} 0 ${link4_theta}" xyz="0 0 ${link4_d}" />        
         <axis xyz="0 0 1" />
-    </joint>
+    </joint> -->
 
      <!-- Use for GUI control -->
-    <gazebo>
+    <!-- <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
             name="gz::sim::systems::JointPositionController">
             <joint_name>joint1</joint_name>
@@ -287,12 +282,7 @@
             <use_velocity_commands>true</use_velocity_commands>
             <cmd_max>1.0</cmd_max>
         </plugin>         
-    </gazebo>
-
-    <!-- Set joint4 to publish, it is fixed joint which will not publish by default-->
-    <gazebo reference="joint4">
-        <preserveFixedJoint>true</preserveFixedJoint>
-    </gazebo>
+    </gazebo> -->
 
     <gazebo>
         <plugin
@@ -312,9 +302,8 @@
             <publish_nested_model_pose>false</publish_nested_model_pose>
             <use_pose_vector_msg>true</use_pose_vector_msg>
         </plugin>
-        
 
-        <!-- <plugin
+        <plugin
             filename="ignition-gazebo-joint-trajectory-controller-system"
             name="ignition::gazebo::systems::JointTrajectoryController">
 
@@ -355,6 +344,6 @@
             <position_cmd_max>50</position_cmd_max>
             <position_cmd_max>50</position_cmd_max>
             <position_cmd_max>50</position_cmd_max>
-        </plugin> -->
+        </plugin>
     </gazebo>
 </robot>
