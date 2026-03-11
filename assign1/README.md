@@ -17,7 +17,6 @@ colcon build
 source install/setup.bash
 ```
 
-
 ##  To launch RViz:
 
 ```bash
@@ -46,7 +45,6 @@ Echo topic containt only link4 with the next 10 lines:
 ```bash
 ros2 topic echo /model/scara_robot/pose | grep -A 10 'link4'
 ```
-
 result:
 ```bash
 child_frame_id: scara_robot/link4
@@ -60,6 +58,42 @@ child_frame_id: scara_robot/link4
       y: -7.9175019937427e-18
       z: -1.0885391262826189e-07
       w: 2.1518559089703904e-16
+```
+
+Echo joint states topic
+
+```bash
+ros2 topic echo /joint_states
+```
+result:
+
+```bash
+header:
+  stamp:
+    sec: 529
+    nanosec: 644000000
+  frame_id: ''
+name:
+- joint1
+- joint2
+- joint3
+- joint4
+position:
+- -1.2864280262544412
+- 0.636443339304829
+- 0.249173553719023
+- 0.0
+velocity:
+- 6.106561853343949e-20
+- 1.2409622328558278e-17
+- 3.7226746869303996e-15
+- 0.0
+effort:
+- 0.0
+- 0.0
+- 0.0
+- 0.0
+---
 ```
 
 ## Manual bridge topic ros2 <> gazebo
