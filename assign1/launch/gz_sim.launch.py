@@ -14,24 +14,21 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     package_name = 'assign1'
     ros_gz_sim_pkg_path = get_package_share_directory('ros_gz_sim')
-    pkg_share = FindPackageShare(package_name)  # Replace with your own package name
+    # pkg_share = FindPackageShare(package_name)
+    pkg_share_path = get_package_share_directory(package_name)
     
     gz_launch_path = PathJoinSubstitution([ros_gz_sim_pkg_path, 'launch', 'gz_sim.launch.py'])
-    world_path = os.path.join('empty.sdf')
-    xacro_path = PathJoinSubstitution([pkg_share, 'urdf', 'scara.urdf.xacro'])
+    world_path = os.path.join(pkg_share_path, 'worlds', 'empty.sdf')
+    gui_config_path = os.path.join(pkg_share_path, 'config', 'gui.config')
+    # xacro_path = PathJoinSubstitution([pkg_share, 'urdf', 'scara.urdf.xacro'])
+    xacro_path = os.path.join(pkg_share_path, 'urdf', 'scara.urdf.xacro')
 
     robot_description = ParameterValue(
         Command(['xacro', ' ', xacro_path]),
         value_type=str
     )
 
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        parameters=[{'robot_description': robot_description}],
-    )
-
+    # Spawn the robot in Gazebo (replace with your own model and topic names)
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -45,7 +42,15 @@ def generate_launch_description():
         ],
     )
 
-    # Bridge for joint states and trajectories (replace with your own topics)
+    # Publish the robot state (replace with your own robot description topic)
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[{'robot_description': robot_description}],
+    )
+
+    # Bridge for joint states and trajectories
     joint_state_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -55,7 +60,8 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Bridge for joint trajectory commands (replace with your own topics)
+    # Bridge for joint trajectory commands
+    # only use to send trajectory commands to Gazebo, not for receiving joint states
     joint_trajectory_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -65,7 +71,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Bridge for robot pose (replace with your own topics)
+    # Bridge for robot pose
     pose_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -78,17 +84,19 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
-            PathJoinSubstitution([pkg_share, 'models'])
+            # PathJoinSubstitution([pkg_share, 'models'])
+            os.path.join(pkg_share_path, 'models')
         ),
         SetEnvironmentVariable(
             'GZ_SIM_PLUGIN_PATH',
-            PathJoinSubstitution([pkg_share, 'plugins'])
+            # PathJoinSubstitution([pkg_share, 'plugins'])
+            os.path.join(pkg_share_path, 'plugins')
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(gz_launch_path),
             launch_arguments={
-                'gz_args': world_path,  # Replace with your own world file
-                'on_exit_shutdown': 'True'
+                'gz_args': f"-r {world_path} --gui-config {gui_config_path}",
+                'on_exit_shutdown': 'True',
             }.items(),
         ),
         robot_state_publisher,
@@ -96,13 +104,4 @@ def generate_launch_description():
         spawn_robot,
         joint_state_bridge,
         pose_bridge,
-        # Bridging and remapping Gazebo topics to ROS 2 (replace with your own topics)
-        # Node(
-        #     package='ros_gz_bridge',
-        #     executable='parameter_bridge',
-        #     arguments=['/example_imu_topic@sensor_msgs/msg/Imu@gz.msgs.IMU',],
-        #     remappings=[('/example_imu_topic',
-        #                  '/remapped_imu_topic'),],
-        #     output='screen'
-        # ),
     ])

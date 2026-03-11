@@ -17,7 +17,7 @@ setup(
         (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
 
         # Install gazebo config files
-        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config'), glob('config/*')),
 
         # Install URDF/Xacro
         (os.path.join('share', package_name, 'urdf'), glob('urdf/*')),
