@@ -3,7 +3,7 @@
 ## Install package's dependencies
 
 ```bash
-$ rosdep install --from-paths src --ignore-src -r -y
+rosdep install --from-paths src --ignore-src -r -y
 ```
 --from-paths src: Looks inside your src folder for any package.xml files.
 --ignore-src: Tells it not to try and install packages that are already in your src folder (your own code).
@@ -13,26 +13,26 @@ $ rosdep install --from-paths src --ignore-src -r -y
 ## Build the packages and source it:
 
 ```bash
-$ colcon build
-$ source install/setup.bash
+colcon build
+source install/setup.bash
 ```
 
 
 ##  To launch RViz:
 
 ```bash
-$ ros2 launch assign1 display.launch.py
+ros2 launch assign1 display.launch.py
 ```
 ##  To launch gazebo:
 
 ```bash
-$ ros2 launch assign1 gz_sim.launch.py
+ros2 launch assign1 gz_sim.launch.py
 ```
 
 ## Check topic list:
 
 ```bash
-$ ros2 topic list
+ros2 topic list
 ```
 result:
 ```bash
@@ -44,7 +44,7 @@ result:
 Echo topic containt only link4 with the next 10 lines:
 
 ```bash
-$ ros2 topic echo /model/scara_robot/pose | grep -A 10 'link4'
+ros2 topic echo /model/scara_robot/pose | grep -A 10 'link4'
 ```
 
 result:
@@ -67,19 +67,19 @@ child_frame_id: scara_robot/link4
 Commnad to add urdf model to gazebo
 
 ```bash
-$ ign service -s /world/empty/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 1000 --req 'sdf_filename: "/path_to/model.urdf", name: "model_name"'
+ign service -s /world/empty/create --reqtype ignition.msgs.EntityFactory --reptype ignition.msgs.Boolean --timeout 1000 --req 'sdf_filename: "/path_to/model.urdf", name: "model_name"'
 ```
 
 Command to bridge ros2 and gazebo using joint_trajectory data type
 
 ```bash
-$ ros2 run ros_gz_bridge parameter_bridge /model/scara_robot/joint_trajectory@trajectory_msgs/msg/JointTrajectory]ignition.msgs.JointTrajectory
+ros2 run ros_gz_bridge parameter_bridge /model/scara_robot/joint_trajectory@trajectory_msgs/msg/JointTrajectory]ignition.msgs.JointTrajectory
 ```
 
 Gazebo - topicpublish joint poisition
 
 ```bash
-$ ign topic -t /model/scara_robot/joint_trajectory \
+ign topic -t /model/scara_robot/joint_trajectory \
   -m ignition.msgs.JointTrajectory \
   -p 'joint_names: "joint1"
       joint_names: "joint2"
@@ -98,7 +98,7 @@ $ ign topic -t /model/scara_robot/joint_trajectory \
 Ros2 - topic publish joint poisition
 
 ```bash
-$ ros2 topic pub --once /model/scara_robot/joint_trajectory trajectory_msgs/msg/JointTrajectory "{
+ros2 topic pub --once /model/scara_robot/joint_trajectory trajectory_msgs/msg/JointTrajectory "{
   joint_names: ['joint1', 'joint2', 'joint3'],
   points: [
     {
@@ -111,5 +111,5 @@ $ ros2 topic pub --once /model/scara_robot/joint_trajectory trajectory_msgs/msg/
 Topic publish joint controller
 
 ```bash
-$ ros2 topic pub --once /joint_group_position_controller/commands std_msgs/msg/Float64MultiArray "{data: [1.57, 0.5, 0.0, 1.2]}"
+ros2 topic pub --once /joint_group_position_controller/commands std_msgs/msg/Float64MultiArray "{data: [1.57, 0.5, 0.0, 1.2]}"
 ```
