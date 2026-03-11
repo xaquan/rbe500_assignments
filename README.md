@@ -15,7 +15,33 @@ ros2 launch assign1 display.launch.py
 To launch gazebo:
 
 ```bash
-ros2 launch assign1 gazebo.launch.py
+ros2 launch assign1 gz_sim.launch.py
+```
+
+Check topic list:
+
+```bash
+ros2 topic list
+> /joint_states
+> /model/scara_robot/joint_trajectory
+> /model/scara_robot/pose
+```
+
+Echo topic containt only link4 with the next 10 lines:
+
+```bash
+ros2 topic echo /model/scara_robot/pose | grep -A 10 'link4'
+>child_frame_id: scara_robot/link4
+> transform:
+>    translation:
+>      x: 1.20000006531234
+>      y: 7.36532871694378e-17
+>      z: 0.29999983208325537
+>    rotation:
+>      x: 0.9999999999999941
+>      y: -7.9175019937427e-18
+>      z: -1.0885391262826189e-07
+>      w: 2.1518559089703904e-16
 ```
 
 Commnad to add urdf model to gazebo

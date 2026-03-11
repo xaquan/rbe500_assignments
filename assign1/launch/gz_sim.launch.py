@@ -45,6 +45,7 @@ def generate_launch_description():
         ],
     )
 
+    # Bridge for joint states and trajectories (replace with your own topics)
     joint_state_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -54,6 +55,7 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Bridge for joint trajectory commands (replace with your own topics)
     joint_trajectory_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -63,6 +65,7 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Bridge for robot pose (replace with your own topics)
     pose_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -92,7 +95,7 @@ def generate_launch_description():
         joint_trajectory_bridge,
         spawn_robot,
         joint_state_bridge,
-
+        pose_bridge,
         # Bridging and remapping Gazebo topics to ROS 2 (replace with your own topics)
         # Node(
         #     package='ros_gz_bridge',
