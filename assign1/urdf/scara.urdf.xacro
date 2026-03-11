@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot name="scara_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-
+    <!-- Joint colors-->
     <material name="blue">
         <color rgba="0 0 0.8 1"/>
     </material>
@@ -11,73 +11,92 @@
     <material name="green">
         <color rgba="0.0 1.0 0.0 1.0"/>
     </material>
-
     <material name="purple">
         <color rgba="0.5 0.0 0.5 1.0"/>
     </material>
 
+    <!-- Robot dimensions -->
     <xacro:property name="d1" value=".6" />
     <xacro:property name="a1" value=".6" />
     <xacro:property name="a2" value=".6" />
     <xacro:property name="d3" value=".3" />
-
-    <xacro:property name="link3_limit" value=".3" />
+    
+    <!-- EE cylinder measurement, radius and length -->
     <xacro:property name="ee_r" value=".05" />
     <xacro:property name="ee_l" value="${d3}" />   
-    
+
+    <!-- Default revolute joint radius and length-->
     <xacro:property name="cyl_joint_r" value=".1" />
-    <xacro:property name="cyl_joint_l" value=".2" />
+    <xacro:property name="cyl_joint_l" value=".2" />   
 
-    <xacro:property name="link_r" value=".1" />
+    <!-- Default prismatic length of each side of a square -->
+    <xacro:property name="prismatic_link_a" value=".2" /> 
+    <!-- Default prismatic extention limit-->
+    <xacro:property name="presmatic_extend_range" value=".3" />
 
-    <xacro:property name="prismatic_link_a" value=".2" />
-
-
+    <!-- Default link arm width of a side of a square-->
+    <xacro:property name="link_arm_a" value=".1" />
+    
+    <!-- 
+            Model setup 
+    -->
+    
+    <!-- Base of the robot -->
     <xacro:property name="base_link_l" value=".5" />
     <xacro:property name="base_link_w" value=".5" />
     <xacro:property name="base_link_h" value="0.1" />
 
+    <!-- Joint 1 visual-->
     <xacro:property name="link1_l" value="${d1}" />
-    <xacro:property name="link1_r" value="${link_r}" />
+    <xacro:property name="link1_r" value="${cyl_joint_r}" />
+    <!-- DH data of joint 1-->
     <xacro:property name="link1_theta" value="0" />
-    <!-- <xacro:property name="link1_d" value="${base_link_h}" /> -->
-     <xacro:property name="link1_d" value="0" />
+    <xacro:property name="link1_d" value="0" />
     <xacro:property name="link1_a" value="0" />
     <xacro:property name="link1_alpha" value="0" />
-
+    <!-- Joint 1 arm visual-->
     <xacro:property name="link1_arm_l" value="${a1}" />
-    <xacro:property name="link1_arm_w" value="${link_r}" />   
-    <xacro:property name="link1_arm_h" value="${link_r}" />
+    <xacro:property name="link1_arm_w" value="${link_arm_a}" />   
+    <xacro:property name="link1_arm_h" value="${link_arm_a}" />
 
+    <!-- Joint 2 visual-->
     <xacro:property name="link2_l" value="${cyl_joint_l}" />
     <xacro:property name="link2_r" value="${cyl_joint_r}" />
+    <!-- DH data of joint 2-->
     <xacro:property name="link2_theta" value="0" />
     <xacro:property name="link2_d" value="0" />
     <xacro:property name="link2_a" value="${a1}" />
     <xacro:property name="link2_alpha" value="0" />
-
+    <!-- Joint 2 arm visual-->
     <xacro:property name="link2_arm_l" value="${a2}" />
-    <xacro:property name="link2_arm_w" value="${link_r}" />   
-    <xacro:property name="link2_arm_h" value="${link_r}" />
+    <xacro:property name="link2_arm_w" value="${link_arm_a}" />   
+    <xacro:property name="link2_arm_h" value="${link_arm_a}" />
 
+    <!-- Joint 3 visual-->
     <xacro:property name="link3_arm_l" value="${prismatic_link_a}" />
     <xacro:property name="link3_arm_w" value="${prismatic_link_a}" />  
-    <xacro:property name="link3_arm_h" value="${prismatic_link_a + link3_limit}" />
+    <xacro:property name="link3_arm_h" value="${prismatic_link_a + presmatic_extend_range}" />
+    <!-- DH data of joint 3-->
     <xacro:property name="link3_theta" value="0" />
     <xacro:property name="link3_d" value="0" />
     <xacro:property name="link3_a" value="${a2}" />
     <xacro:property name="link3_alpha" value="0" />
+    <!-- Prismatic extend limit -->
     <xacro:property name="link3_limit_lower" value="0" />
-    <xacro:property name="link3_limit_upper" value="${link3_limit}" />
+    <xacro:property name="link3_limit_upper" value="${presmatic_extend_range}" />
 
+    <!-- EE 4 visual -->
     <xacro:property name="link4_l" value="${ee_l}" />
     <xacro:property name="link4_r" value="${ee_r}" />
+    <!-- DH data of joint 4 -->
     <xacro:property name="link4_theta" value="0" />
     <xacro:property name="link4_d" value="${-d3}" />
     <xacro:property name="link4_a" value="0" />
     <xacro:property name="link4_alpha" value="${pi}" />
 
-
+    <!-- 
+            Inertial template 
+    -->
     <xacro:macro name="inertial_box" params="mass x y z *origin">
         <inertial>
             <xacro:insert_block name="origin"/>
@@ -97,6 +116,10 @@
                     izz="${(1/2) * mass * (radius*radius)}" />
         </inertial>
     </xacro:macro>
+
+    <!-- 
+            Modeling the robot
+    -->
 
     <link name="world_link"/>
 
@@ -134,6 +157,7 @@
     </joint>
 
     <link name="link1">
+        <!-- Cylinder joint visual -->
         <visual>
             <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
             <geometry>
@@ -150,8 +174,9 @@
         <xacro:inertial_cylinder mass="1" length="${link1_l}" radius="${link1_r}">
             <origin rpy="0 0 0" xyz="0 0 ${link1_l/2}" />
         </xacro:inertial_cylinder>
-
-         <visual>
+        
+        <!-- Arm visual -->
+        <visual>
             <origin rpy="0 0 0" xyz="${link1_arm_l/2} 0 ${link1_l}" />
             <geometry>
                 <box size="${link1_arm_l} ${link1_arm_w} ${link1_arm_h}" />
@@ -169,6 +194,8 @@
     </link>
 
     <link name="link2">
+        
+        <!-- Cylinder joint  visual -->
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0" />
             <geometry>
@@ -185,7 +212,8 @@
         <xacro:inertial_cylinder mass="0.5" length="${link2_l}" radius="${link2_r}">
             <origin rpy="0 0 0" xyz="0 0 0" />
         </xacro:inertial_cylinder>
-
+        
+        <!-- Arm visual -->
         <visual>
             <origin rpy="0 0 0" xyz="${link2_arm_l/2} 0 0" />
             <geometry>
@@ -212,6 +240,7 @@
     </joint>
 
     <link name="link3">
+        <!-- Prismatic joint visual -->
         <visual>
             <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
             <geometry>
@@ -227,8 +256,7 @@
         </collision>
         <xacro:inertial_box mass="0.5" x="${link3_arm_l}" y="${link3_arm_w}" z="${link3_arm_h}">
             <origin rpy="0 0 0" xyz="0 0 ${link3_arm_h/2 - prismatic_link_a/2}" />
-        </xacro:inertial_box>      
-        
+        </xacro:inertial_box>
     </link>
 
     <joint name="joint3" type="prismatic">
@@ -240,6 +268,8 @@
     </joint>
 
     <link name="link4">
+        
+        <!-- Cylinder visual -->
         <visual>
             <origin rpy="0 0 0" xyz="0 0 ${-link4_l/2}" />
             <geometry>
@@ -265,7 +295,14 @@
         <axis xyz="0 0 1" />
     </joint>
 
-     <!-- Use for GUI control, comment out for control via ros2 -->
+    <!-- 
+            Gazebo configuration 
+     -->
+
+    <!-- 
+        Use for GUI control, 
+        comment out for control via ros2 trajectory
+    -->
     <gazebo>
         <plugin filename="gz-sim-joint-position-controller-system"
             name="gz::sim::systems::JointPositionController">
@@ -313,7 +350,10 @@
             <use_pose_vector_msg>true</use_pose_vector_msg>
         </plugin>
         
-        <!-- Joint Trajectory Controller -->
+        <!-- 
+                Joint Trajectory Controller 
+        -->
+                
         <!-- <plugin
             filename="ignition-gazebo-joint-trajectory-controller-system"
             name="ignition::gazebo::systems::JointTrajectoryController">
