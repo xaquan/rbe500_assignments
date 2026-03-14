@@ -17,6 +17,8 @@ def generate_launch_description():
     default_model_path = os.path.join(pkg_share, "urdf", "scara.urdf.xacro")
     default_rviz_config = os.path.join(pkg_share, "rviz", "display.rviz")
 
+    
+
     declare_model = DeclareLaunchArgument(
         "model",
         default_value=default_model_path,
