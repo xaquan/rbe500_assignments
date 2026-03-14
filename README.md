@@ -12,6 +12,14 @@ rosdep install --from-paths src --ignore-src -r -y
 
 ## Build the packages and source it:
 
+Source ros
+  source /opt/ros/<ros_name>/setup.bash
+change ros_name to our version
+
+```bash
+source /opt/ros/humble/setup.bash
+```
+
 ```bash
 colcon build
 source install/setup.bash
