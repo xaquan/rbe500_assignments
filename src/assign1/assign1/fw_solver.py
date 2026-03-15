@@ -5,7 +5,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Transform
 from .scara_kinematic_model import ScaraKinematicModel
-from .ConverterHelper import ConverterHelper
+from .converter_helper import ConverterHelper
 
 class JointStatesSubscriber(Node):
     def __init__(self):
