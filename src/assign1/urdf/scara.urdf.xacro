@@ -16,9 +16,9 @@
     </material>
 
     <!-- Robot dimensions -->
-    <xacro:property name="d1" value=".6" />
-    <xacro:property name="a1" value=".8" />
-    <xacro:property name="a2" value=".6" />
+    <xacro:property name="d1" value=".5" />
+    <xacro:property name="a1" value=".45" />
+    <xacro:property name="a2" value=".35" />
     <xacro:property name="d3" value=".3" />
     
     <!-- EE cylinder measurement, radius and length -->
@@ -32,7 +32,7 @@
     <!-- Default prismatic length of each side of a square -->
     <xacro:property name="prismatic_link_a" value=".2" /> 
     <!-- Default prismatic extention limit-->
-    <xacro:property name="presmatic_extend_range" value=".3" />
+    <xacro:property name="prismatic_extend_range" value=".2" />
 
     <!-- Default link arm width of a side of a square-->
     <xacro:property name="link_arm_a" value=".1" />
@@ -46,9 +46,14 @@
     <xacro:property name="base_link_w" value=".5" />
     <xacro:property name="base_link_h" value="0.1" />
 
+    <!-- Joint 1 -->
+    <xacro:property name="joint1_lower" value="${-pi}" />
+    <xacro:property name="joint1_upper" value="${pi}" />
+
     <!-- Joint 1 visual-->
     <xacro:property name="link1_l" value="${d1}" />
     <xacro:property name="link1_r" value="${cyl_joint_r}" />
+
     <!-- DH data of joint 1-->
     <xacro:property name="link1_theta" value="0" />
     <xacro:property name="link1_d" value="0" />
@@ -58,6 +63,11 @@
     <xacro:property name="link1_arm_l" value="${a1}" />
     <xacro:property name="link1_arm_w" value="${link_arm_a}" />   
     <xacro:property name="link1_arm_h" value="${link_arm_a}" />
+
+    
+    <!-- Joint 1 -->
+    <xacro:property name="joint2_lower" value="${-pi/2}" />
+    <xacro:property name="joint2_upper" value="${pi/2}" />
 
     <!-- Joint 2 visual-->
     <xacro:property name="link2_l" value="${cyl_joint_l}" />
@@ -72,18 +82,20 @@
     <xacro:property name="link2_arm_w" value="${link_arm_a}" />   
     <xacro:property name="link2_arm_h" value="${link_arm_a}" />
 
+    <!-- Joint 3 -->
+    <!-- Prismatic extend limit -->
+    <xacro:property name="joint3_lower" value="0" />
+    <xacro:property name="joint3_upper" value="${prismatic_extend_range}" />
+
     <!-- Joint 3 visual-->
     <xacro:property name="link3_arm_l" value="${prismatic_link_a}" />
     <xacro:property name="link3_arm_w" value="${prismatic_link_a}" />  
-    <xacro:property name="link3_arm_h" value="${prismatic_link_a + presmatic_extend_range}" />
+    <xacro:property name="link3_arm_h" value="${prismatic_link_a + prismatic_extend_range}" />
     <!-- DH data of joint 3-->
     <xacro:property name="link3_theta" value="0" />
     <xacro:property name="link3_d" value="0" />
     <xacro:property name="link3_a" value="${a2}" />
     <xacro:property name="link3_alpha" value="0" />
-    <!-- Prismatic extend limit -->
-    <xacro:property name="link3_limit_lower" value="0" />
-    <xacro:property name="link3_limit_upper" value="${presmatic_extend_range}" />
 
     <!-- EE 4 visual -->
     <xacro:property name="link4_l" value="${ee_l}" />
@@ -152,7 +164,7 @@
         <child link="link1" />
         <origin rpy="0 0 0" xyz="0 0 ${link1_d}" />
         <axis xyz="0 0 1" />
-        <limit lower="${-5*pi/6}" upper="${5*pi/6}" effort="100" velocity="5.0" />
+        <limit lower="${joint1_lower}" upper="${joint1_upper}" effort="100" velocity="5.0" />
         <dynamics damping="0.1" friction="0.0"/>
     </joint>
 
@@ -235,7 +247,7 @@
         <parent link="link1" />
         <child link="link2" />
         <origin rpy="0 0 0" xyz="${a1} 0 ${d1}" />
-        <limit lower="${-pi/2}" upper="${pi/2}" effort="100" velocity="1.0" />
+        <limit lower="${joint2_lower}" upper="${joint2_upper}" effort="100" velocity="1.0" />
         <axis xyz="0 0 1" />
     </joint>
 
@@ -263,7 +275,7 @@
         <parent link="link2" />
         <child link="link3" />
         <origin rpy="0 0 0" xyz="${link3_a} 0 0" />
-        <limit lower="${link3_limit_lower}" upper="${link3_limit_upper}" effort="100" velocity="5" />
+        <limit lower="${joint3_lower}" upper="${joint3_upper}" effort="100" velocity="5" />
         <axis xyz="0 0 -1" />
     </joint>
 
