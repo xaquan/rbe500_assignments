@@ -156,7 +156,7 @@ unset CMAKE_PREFIX_PATH
 unset COLCON_PREFIX_PATH
 ```
 
-## Test service
+## Test service convert pose to joint positions
 
 position:
 - 0.8937289445557175
@@ -246,6 +246,29 @@ ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles
       y: 0.6876994587595946,
       z: 1.6757923795314082e-07,
       w: -1.7780160732920303e-07,
+    }
+  }
+}"
+```
+
+position:
+- 0.6229019916600453
+- 1.435382850347061
+- 0.1429752066115816
+
+```bash
+ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
+  ee_pose: {
+    position: {
+      x: 0.20154203872408424,
+      y: 0.5717567482441811,
+      z: 0.05702519497756967,
+    }, 
+    orientation: {
+      x: 0.5155538572769268,
+      y: 0.8568571761074434,
+      z: 2.0928531047290802e-07,
+      w: -1.262624091873945e-07,
     }
   }
 }"
