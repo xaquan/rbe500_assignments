@@ -19,8 +19,7 @@ class JointStatesSubscriber(Node):
             10
         )
         self.subscription  # prevent unused variable warning
-        self.T_final_symbolic = ScaraKinematicModel().fk_T_symbolic_scara_robot()  # Compute the symbolic forward kinematics transformation matrix for the SCARA robot
-
+        
         # Publisher for the end-effector pose
         self.publisher_ = self.create_publisher(Transform, 'scara_ee_pose', 10)
 
@@ -28,17 +27,18 @@ class JointStatesSubscriber(Node):
         if len(msg.position) < 3:
             self.get_logger().error(f"Expected at least 3 joint angles, got {len(msg.position)}")
             return
-        
+        self.get_logger().info(f"Received joint angles: {msg.position[0:3]}")
+                
         positions = np.array(msg.position[0:3])
         kmodel = ScaraKinematicModel()
 
         # ee_pose = kmodel.forward_kinematics_scara_robot(positions) # Compute the end-effector pose using the forward kinematics function
         
         # Compute the end-effector pose using the symbolic forward kinematics function with the provided joint angles
-        ee_pose = kmodel.forward_kinematics_scara_robot(0.5, 0.45, 0.35, 0.3, positions, self.T_final_symbolic)
+        ee_pose = kmodel.forward_kinematics_scara_robot(positions)
 
         pub_msg = ConverterHelper.transform_matrix_to_transform_msg(ee_pose)  # Publish the end-effector pose as a string message
-        # self.get_logger().info(f"Publishing end-effector pose:\n{pub_msg}")
+        self.get_logger().info(f"Publishing end-effector pose:\n{pub_msg}")
 
            
         self.publisher_.publish(pub_msg)  # Publish the end-effector pose

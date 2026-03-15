@@ -5,6 +5,22 @@ import sympy as sp
 
 class ScaraKinematicModel():
     @staticmethod
+    def get_robot_configuration():
+
+        # Robot dimensions
+        d1 = 0.5
+        a1 = 0.45
+        a2 = 0.35
+        d3 = 0.3
+        # return as object for better readability
+        return {
+            'd1': d1,
+            'a1': a1,
+            'a2': a2,
+            'd3': d3,
+        }
+
+    @staticmethod
     def wrap_to_pi(a):
         """Wrap angle(s) to [-pi, pi)."""
         a = np.asarray(a, dtype=float)
@@ -78,21 +94,30 @@ class ScaraKinematicModel():
             T = T @ dh_std
         return T
     
-    def forward_kinematics_scara_robot(self, d1, a1, a2, d3, positions, T_final_symbolic = None):
+    def print_symbolic_fk(self):
+        """
+            Prints the symbolic forward kinematics transformation matrix for the SCARA robot.
+            This method computes the symbolic forward kinematics transformation matrix for a 
+            SCARA robot and prints it in a readable format. The transformation matrix is derived 
+            from the Denavit-Hartenberg (DH)
+        """
+        T_symbolic = self.fk_T_symbolic_scara_robot()
+        sp.pprint(T_symbolic)
+    
+    def forward_kinematics_scara_robot(self, positions):
         if len(positions) != 3:
             raise ValueError("Expected 3 joint angles, got {}".format(len(positions)))
 
-        if T_final_symbolic is None:
-            T_final_symbolic = self.fk_T_symbolic_scara_robot()
+        T_final_symbolic = self.fk_T_symbolic_scara_robot()
 
         T_final = T_final_symbolic.subs({
             'q1': positions[0],
             'q2': positions[1],
             'q3': positions[2],
-            'd1': d1,
-            'a1': a1,
-            'a2': a2,
-            'd3': d3,
+            'd1': self.get_robot_configuration()['d1'],
+            'a1': self.get_robot_configuration()['a1'],
+            'a2': self.get_robot_configuration()['a2'],
+            'd3': self.get_robot_configuration()['d3'],
         })
 
         return np.array(T_final).astype(np.float64)
@@ -111,11 +136,11 @@ class ScaraKinematicModel():
         """
 
         # Robot dimensions
-        d1 = 0.5
-        a1 = 0.45
-        a2 = 0.35
-        d3 = 0.3
-              
+        d1 = self.get_robot_configuration()['d1']
+        a1 = self.get_robot_configuration()['a1']
+        a2 = self.get_robot_configuration()['a2']
+        d3 = self.get_robot_configuration()['d3']
+
         # Convert quaternion to rotation matrix
         rotation = ConverterHelper.quat_to_rotation_array(
             pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w) 
@@ -136,45 +161,46 @@ class ScaraKinematicModel():
         py = pose.position.y
         pz = d1  # Adjust for the end-effector orientation and d3 offset
 
-        print(f"Joint 3 position: ({px}, {py}, {pz})")
+        # print(f"Joint 3 position: ({px}, {py}, {pz})")
 
         r1 = np.sqrt(px**2 + py**2)
 
-        print(f"r1: {r1}")
+        # print(f"r1: {r1}")
 
         # Calculate q1, q2, q3 using geometric approach
 
-        # Solvig for q1
-        # q1 = alpha - beta        
-        # alpha = atan2(cos(alpha), sin(alpha))
-        # beta = atan2(cos(beta), sin(beta))
-        #
-        # cos(alpha) = atan2(py, px)
-        # sin(alpha) = sqrt(1 - cos(alpha)^2)
-        # cos(beta) = (a1^2 + r1^2 - a2^2) / (2*a1*r1)
-        # sin(beta) = sqrt(1 - cos(beta)^2)
+        """ Solvig for q1
+            q1 = alpha - beta        
+            alpha = atan2(cos(alpha), sin(alpha))
+            beta = atan2(cos(beta), sin(beta))
+            
+            cos(alpha) = atan2(py, px)
+            sin(alpha) = sqrt(1 - cos(alpha)^2)
+            cos(beta) = (a1^2 + r1^2 - a2^2) / (2*a1*r1)
+            sin(beta) = sqrt(1 - cos(beta)^2)
+        """
 
         cos_alpha = px / r1
         sin_alpha = np.sqrt(1 - cos_alpha**2)
 
-        print(f"cos_alpha: {cos_alpha}, sin_alpha: {sin_alpha}")
+        # print(f"cos_alpha: {cos_alpha}, sin_alpha: {sin_alpha}")
 
         cos_beta = (a1**2 + r1**2 - a2**2) / (2*a1*r1)
         sin_beta = np.sqrt(1 - cos_beta**2)
 
-        print(f"cos_beta: {cos_beta}, sin_beta: {sin_beta}")
+        # print(f"cos_beta: {cos_beta}, sin_beta: {sin_beta}")
 
         alpha_1 = np.arctan2(sin_alpha, cos_alpha)
         alpha_2 = np.arctan2(-sin_alpha, cos_alpha)
         beta_1 = np.arctan2(sin_beta, cos_beta)
         beta_2 = np.arctan2(-sin_beta, cos_beta)
 
-        print(f"alpha_1: {alpha_1}, alpha_2: {alpha_2}")
-        print(f"beta_1: {beta_1}, beta_2: {beta_2}")
+        # print(f"alpha_1: {alpha_1}, alpha_2: {alpha_2}")
+        # print(f"beta_1: {beta_1}, beta_2: {beta_2}")
 
         q1_candidates = np.array([alpha_1 - beta_1, alpha_1 - beta_2, alpha_2 - beta_1, alpha_2 - beta_2])
         k = np.argmin(np.abs(self.wrap_to_pi(q1_candidates)))
-        q1 = q1_candidates[k]
+        # q1 = q1_candidates[k]
 
         # Solving for q2
         # cos(q2) = -(a1^2 + a2^2 - r1^2) / (2*a1*a2)
@@ -192,7 +218,7 @@ class ScaraKinematicModel():
         q2_candidates = np.array([q2_1, q2_2])
         
         k = np.argmin(np.abs(self.wrap_to_pi(q2_candidates)))
-        q2 = q2_candidates[k]
+        # q2 = q2_candidates[k]
 
         # print(f"Found angles: {aangles}")
 
@@ -202,13 +228,12 @@ class ScaraKinematicModel():
 
         
         aangles = self.find_combinations(pose, q1_candidates, q2_candidates, q3)
-
         # return array float64 for better compatibility with ROS messages
         # return np.array([q1, q2, q3]).astype(np.float64)
         return aangles.astype(np.float64)
    
 
-    def find_combinations(self, pose, q1_candidates, q2_candidates, q3=0):        
+    def find_combinations(self, pose, q1_candidates, q2_candidates, q3):        
         """
             Verifies the correctness of the inverse kinematics solution by comparing the forward kinematics result with the desired pose.
             This function computes the forward kinematics using the provided joint angles and compares the resulting end-effector pose with the original target pose. It checks if the position and orientation of the computed pose are within a specified tolerance of the target pose, indicating whether the inverse kinematics solution is valid.
@@ -223,7 +248,7 @@ class ScaraKinematicModel():
         for q1 in q1_candidates:
             for q2 in q2_candidates:
                 joint_angles = np.array([q1, q2, q3])
-                pose_computed = self.forward_kinematics_scara_robot(0.5, 0.45, 0.35, 0.3, joint_angles)
+                pose_computed = self.forward_kinematics_scara_robot(joint_angles)
                 position_error = np.linalg.norm(pose_computed[:3, 3] - np.array([pose.position.x, pose.position.y, pose.position.z]))
                 orientation_error = np.linalg.norm(pose_computed[:3, :3] - ConverterHelper.quat_to_rotation_array(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w))
                 if position_error < 1e-3 and orientation_error < 1e-3:
