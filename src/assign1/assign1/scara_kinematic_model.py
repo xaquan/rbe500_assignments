@@ -1,0 +1,186 @@
+
+import numpy as np
+from .ConverterHelper import ConverterHelper
+import sympy as sp
+
+class ScaraKinematicModel():
+    @staticmethod
+    def wrap_to_pi(a):
+        """Wrap angle(s) to [-pi, pi)."""
+        a = np.asarray(a, dtype=float)
+        return (a + np.pi) % (2*np.pi) - np.pi
+    
+    # Calculate the homogeneous transformation matrix from DH parameters
+    @staticmethod
+    def dh_standard(theta, d, a, alpha):
+        """
+        Computes the Denavit-Hartenberg (DH) standard transformation matrix.
+        This method calculates the 4x4 homogeneous transformation matrix based on 
+        the standard DH convention parameters. The transformation represents the 
+        position and orientation of a joint frame relative to the previous frame.
+        Args:
+            theta (float): Joint angle (rotation about Z-axis) in radians.
+            d (float): Link offset (translation along Z-axis).
+            a (float): Link length (translation along X-axis).
+            alpha (float): Link twist (rotation about X-axis) in radians.
+        Returns:
+            np.ndarray: A 4x4 homogeneous transformation matrix of the form:
+                [[cos(θ), -sin(θ)cos(α), sin(θ)sin(α), a*cos(θ)],
+                 [sin(θ), cos(θ)cos(α), -cos(θ)sin(α), a*sin(θ)],
+                 [0, sin(α), cos(α), d],
+                 [0, 0, 0, 1]]
+        Note:
+            Trigonometric values are rounded to 10 decimal places to avoid 
+            floating-point precision errors.
+        """
+
+        ct, st = sp.cos(theta), sp.sin(theta)
+        ca, sa = sp.cos(alpha), sp.sin(alpha)
+        return np.array([
+            [ct, -st*ca,  st*sa, a*ct],
+            [st,  ct*ca, -ct*sa, a*st],
+            [0,   sa,     ca,    d],
+            [0,  0,    0,  1]
+        ])
+
+    def fk_T_symbolic_scara_robot(self):
+
+        """
+            Computes the forward kinematics transformation matrix for a SCARA robot using symbolic variables.
+            This method calculates the 4x4 homogeneous transformation matrix representing the end-effector pose
+            relative to the base frame of a SCARA robot. The transformation is derived from the Denavit-Hartenberg (DH) parameters, which are defined symbolically for the robot's joints and links.
+            Returns:
+                sp.Matrix: A 4x4 symbolic homogeneous transformation matrix of the form:
+                    [[T11, T12, T13, Px],
+                     [T21, T22, T23, Py],
+                     [T31, T32, T33, Pz],
+                     [0,   0,   0,   1]]
+                where Tij represents the rotation components and (Px, Py, Pz) represents the position of the end-effector."""
+                
+        # Cast thetas value to variable names for better readability
+        q1, q2, q3 = sp.symbols('q1 q2 q3')
+
+        #Physical mesurements of the robot
+        d1, d3 = sp.symbols('d1 d3')
+        a1, a2 = sp.symbols('a1 a2')
+
+        DH = [
+            (q1, d1, a1, 0),
+            (q2, 0, a2, 0),
+            (0, -(d3 + q3), 0, sp.pi),
+        ]
+
+        # Calculate the forward kinematics using the DH parameters
+        T = sp.eye(4)
+        for theta, d, a, alpha in DH:
+            # Calculate the homogeneous transformation matrix for each joint and multiply them together
+            dh_std = self.dh_standard(theta, d, a, alpha)
+            T = T @ dh_std
+        return T
+    
+    def forward_kinematics_scara_robot(self, d1, a1, a2, d3, positions, T_final_symbolic = None):
+        if len(positions) != 3:
+            raise ValueError("Expected 3 joint angles, got {}".format(len(positions)))
+
+        if T_final_symbolic is None:
+            T_final_symbolic = self.fk_T_symbolic_scara_robot()
+
+        T_final = T_final_symbolic.subs({
+            'q1': positions[0],
+            'q2': positions[1],
+            'q3': positions[2],
+            'd1': d1,
+            'a1': a1,
+            'a2': a2,
+            'd3': d3,
+        })
+
+        return np.array(T_final).astype(np.float64)
+
+    def inverse_kinematics_scara_robot(self, pose):
+        """
+            Calculate the inverse kinematics solution for a SCARA robot manipulator.
+            This function computes the joint angles (q1, q2, q3) required to achieve
+            a desired end-effector position and orientation. It uses geometric approach to solve
+            the inverse kinematics problem for a SCARA robot with the specified robot parameters.
+            Args:
+                pose (geometry_msgs.msg.Pose): The desired end-effector pose as a 3D position and orientation.
+            Returns:
+                ndarray: A 1D array of 3 float values representing the joint angles [q1, q2, q3] in radians.
+                        Each angle corresponds to a joint of the SCARA robot manipulator.
+        """
+
+        # Robot dimensions
+        d1 = 0.5
+        a1 = 0.45
+        a2 = 0.35
+        d3 = 0.3
+              
+        # Convert quaternion to rotation matrix
+        rotation = ConverterHelper.quat_to_rotation_array(
+            pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w) 
+
+        r11 = rotation[0][0]
+        r12 = rotation[0][1]
+        r13 = rotation[0][2]
+        r21 = rotation[1][0]
+        r22 = rotation[1][1]
+        r23 = rotation[1][2]
+        r31 = rotation[2][0]
+        r32 = rotation[2][1] 
+        r33 = rotation[2][2]
+
+        # Calculate wrist center position        
+        px = pose.position.x
+        py = pose.position.y
+        pz = pose.position.z - r33 - d3  # Adjust for the end-effector orientation and d3 offset
+
+        r1 = np.sqrt(px**2 + py**2)
+
+        # Calculate q1, q2, q3 using geometric approach
+
+        # Solvig for q1
+        # q1 = alpha - beta        
+        # alpha = atan2(cos(alpha), sin(alpha))
+        # beta = atan2(cos(beta), sin(beta))
+        #
+        # cos(alpha) = atan2(py, px)
+        # sin(alpha) = sqrt(1 - cos(alpha)^2)
+        # cos(beta) = (a1^2 + r1^2 - a2^2) / (2*a1*r1)
+        # sin(beta) = sqrt(1 - cos(beta)^2)
+
+        cos_alpha = np.arctan2(py, px)
+        sin_alpha = np.sqrt(1 - cos_alpha**2)
+        cos_beta = (a1**2 + r1**2 - a2**2) / (2*a1*r1)
+        sin_beta = np.sqrt(1 - cos_beta**2)
+
+        alpha_1 = np.arctan2(sin_alpha, cos_alpha)
+        alpha_2 = np.arctan2(-sin_alpha, cos_alpha)
+        beta_1 = np.arctan2(sin_beta, cos_beta)
+        beta_2 = np.arctan2(-sin_beta, cos_beta)
+
+        q1_candidates = np.array([alpha_1 - beta_1, alpha_1 - beta_2, alpha_2 - beta_1, alpha_2 - beta_2])
+        k = np.argmin(np.abs(self.wrap_to_pi(q1_candidates)))
+        q1 = q1_candidates[k]
+
+        # Solving for q2
+        # cos(q2) = -(px^2 + py^2 - a1^2 - a2^2) / (2*a1*a2)
+        # sin(q2) = sqrt(1 - cos(q2)^2)
+        # q2 = atan2(+-sin(q2), cos(q2))
+
+        cos_q2 = -(px**2 + py**2 - a1**2 - a2**2) / (2*a1*a2)
+        sin_q2 = np.sqrt(1 - cos_q2**2)
+        q2_1 = np.arctan2(sin_q2, cos_q2)
+        q2_2 = np.arctan2(-sin_q2, cos_q2)
+        q2_candidates = np.array([q2_1, q2_2])
+        k = np.argmin(np.abs(self.wrap_to_pi(q2_candidates)))
+        q2 = q2_candidates[k]
+
+        # Solving for q3
+        # q3 = d1 - pz - d3
+        q3 = pz - d1 - d3
+
+        return np.array([q1, q2, q3])
+
+   
+

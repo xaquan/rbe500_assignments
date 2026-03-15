@@ -81,6 +81,15 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Node to compute and publish end-effector pose based on joint states
+    fw_solver_node = Node(
+        package='assign1',            # Your package name
+        executable='fw_solver',       # Must match the string in console_scripts
+        name='forward_kinematics_node',
+        output='screen',              # Ensures print() and get_logger() show in terminal
+        parameters=[{'use_sim_time': True}]
+    )
+
     return LaunchDescription([
         SetEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
@@ -104,4 +113,6 @@ def generate_launch_description():
         spawn_robot,
         joint_state_bridge,
         pose_bridge,
+        fw_solver_node,
+
     ])
