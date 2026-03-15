@@ -90,6 +90,14 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
+    inv_service_node = Node(
+        package='assign1',
+        executable='inv_service',
+        name='pose_to_joint_angles_server',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+
     return LaunchDescription([
         SetEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
@@ -114,5 +122,6 @@ def generate_launch_description():
         joint_state_bridge,
         pose_bridge,
         fw_solver_node,
+        inv_service_node
 
     ])
