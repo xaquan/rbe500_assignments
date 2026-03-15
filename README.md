@@ -1,5 +1,17 @@
 # Run the Assignment 1
 
+## Clone the project
+
+Create new folder
+
+```bash
+mkdir assignments
+```
+
+```bash
+git clone https://github.com/xaquan/rbe500_assignments.git
+```
+
 ## Install package's dependencies
 
 ```bash
