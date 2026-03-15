@@ -1,0 +1,5 @@
+# Request: The EE pose
+geometry_msgs/Pose ee_pose
+---
+# Response: The resulting joint angles
+float64[] joint_angles
