@@ -1,6 +1,5 @@
-from geometry_msgs.msg import Transform
+from assign1_interfaces.srv import PoseToJointAngles
 from .scara_kinematic_model import ScaraKinematicModel
-from .converter_helper import ConverterHelper    
 
 import rclpy
 from rclpy.node import Node
@@ -10,12 +9,18 @@ class InverseKinematicsService(Node):
 
     def __init__(self):
         super().__init__('inverse_kinematics_service')
-        self.srv = self.create_service(Transform, 'pose_to_joint_angles', self.add_two_ints_callback)
+        self.srv = self.create_service(PoseToJointAngles, 'pose_to_joint_angles', self.pose_to_joint_angles_callback)
 
-    def add_two_ints_callback(self, request, response):
+    def pose_to_joint_angles_callback(self, request, response):
         print("Received request for inverse kinematics service")
         print(f"Requested pose:\n{request}")
+        pose = request.ee_pose
+        
+        joint_angles = ScaraKinematicModel().inverse_kinematics_scara_robot(pose)  # Compute the inverse kinematics solution for the SCARA robot using the provided pose
 
+        print(f"Computed joint angles:\n{joint_angles}")
+
+        response.joint_angles = joint_angles.tolist()  # Set the response with the computed joint angles
         return response
 
 

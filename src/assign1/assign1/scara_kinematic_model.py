@@ -1,6 +1,6 @@
 
 import numpy as np
-from .ConverterHelper import ConverterHelper
+from .converter_helper import ConverterHelper
 import sympy as sp
 
 class ScaraKinematicModel():
@@ -130,12 +130,17 @@ class ScaraKinematicModel():
         r32 = rotation[2][1] 
         r33 = rotation[2][2]
 
+
         # Calculate wrist center position        
         px = pose.position.x
         py = pose.position.y
-        pz = pose.position.z - r33 - d3  # Adjust for the end-effector orientation and d3 offset
+        pz = d1  # Adjust for the end-effector orientation and d3 offset
+
+        print(f"Joint 3 position: ({px}, {py}, {pz})")
 
         r1 = np.sqrt(px**2 + py**2)
+
+        print(f"r1: {r1}")
 
         # Calculate q1, q2, q3 using geometric approach
 
@@ -149,38 +154,79 @@ class ScaraKinematicModel():
         # cos(beta) = (a1^2 + r1^2 - a2^2) / (2*a1*r1)
         # sin(beta) = sqrt(1 - cos(beta)^2)
 
-        cos_alpha = np.arctan2(py, px)
+        cos_alpha = px / r1
         sin_alpha = np.sqrt(1 - cos_alpha**2)
+
+        print(f"cos_alpha: {cos_alpha}, sin_alpha: {sin_alpha}")
+
         cos_beta = (a1**2 + r1**2 - a2**2) / (2*a1*r1)
         sin_beta = np.sqrt(1 - cos_beta**2)
+
+        print(f"cos_beta: {cos_beta}, sin_beta: {sin_beta}")
 
         alpha_1 = np.arctan2(sin_alpha, cos_alpha)
         alpha_2 = np.arctan2(-sin_alpha, cos_alpha)
         beta_1 = np.arctan2(sin_beta, cos_beta)
         beta_2 = np.arctan2(-sin_beta, cos_beta)
 
+        print(f"alpha_1: {alpha_1}, alpha_2: {alpha_2}")
+        print(f"beta_1: {beta_1}, beta_2: {beta_2}")
+
         q1_candidates = np.array([alpha_1 - beta_1, alpha_1 - beta_2, alpha_2 - beta_1, alpha_2 - beta_2])
         k = np.argmin(np.abs(self.wrap_to_pi(q1_candidates)))
         q1 = q1_candidates[k]
 
         # Solving for q2
-        # cos(q2) = -(px^2 + py^2 - a1^2 - a2^2) / (2*a1*a2)
+        # cos(q2) = -(a1^2 + a2^2 - r1^2) / (2*a1*a2)
         # sin(q2) = sqrt(1 - cos(q2)^2)
         # q2 = atan2(+-sin(q2), cos(q2))
 
-        cos_q2 = -(px**2 + py**2 - a1**2 - a2**2) / (2*a1*a2)
+        cos_q2 = -(a1**2 + a2**2 - r1**2) / (2*a1*a2)
+        cos_q2 = np.clip(cos_q2, -1, 1)  # Ensure the value is within the valid range for arccos
+
         sin_q2 = np.sqrt(1 - cos_q2**2)
+
         q2_1 = np.arctan2(sin_q2, cos_q2)
         q2_2 = np.arctan2(-sin_q2, cos_q2)
+
         q2_candidates = np.array([q2_1, q2_2])
+        
         k = np.argmin(np.abs(self.wrap_to_pi(q2_candidates)))
         q2 = q2_candidates[k]
 
+        # print(f"Found angles: {aangles}")
+
         # Solving for q3
-        # q3 = d1 - pz - d3
-        q3 = pz - d1 - d3
+        # q3 = d1 - pose.position.z - d3        
+        q3 = d1 - pose.position.z - d3
 
-        return np.array([q1, q2, q3])
+        
+        aangles = self.find_combinations(pose, q1_candidates, q2_candidates, q3)
 
+        # return array float64 for better compatibility with ROS messages
+        # return np.array([q1, q2, q3]).astype(np.float64)
+        return aangles.astype(np.float64)
    
+
+    def find_combinations(self, pose, q1_candidates, q2_candidates, q3=0):        
+        """
+            Verifies the correctness of the inverse kinematics solution by comparing the forward kinematics result with the desired pose.
+            This function computes the forward kinematics using the provided joint angles and compares the resulting end-effector pose with the original target pose. It checks if the position and orientation of the computed pose are within a specified tolerance of the target pose, indicating whether the inverse kinematics solution is valid.
+            Args:
+                pose (geometry_msgs.msg.Pose): The original target end-effector pose that was used to compute the inverse kinematics solution.
+                joint_angles (ndarray): A 1D array of joint angles [q1, q2, q3] that were computed as the inverse kinematics solution.
+        """
+
+
+        # find combination closest to pose
+
+        for q1 in q1_candidates:
+            for q2 in q2_candidates:
+                joint_angles = np.array([q1, q2, q3])
+                pose_computed = self.forward_kinematics_scara_robot(0.5, 0.45, 0.35, 0.3, joint_angles)
+                position_error = np.linalg.norm(pose_computed[:3, 3] - np.array([pose.position.x, pose.position.y, pose.position.z]))
+                orientation_error = np.linalg.norm(pose_computed[:3, :3] - ConverterHelper.quat_to_rotation_array(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w))
+                if position_error < 1e-3 and orientation_error < 1e-3:
+                    return joint_angles
+
 
