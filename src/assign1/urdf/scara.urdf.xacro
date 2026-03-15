@@ -66,8 +66,8 @@
 
     
     <!-- Joint 1 -->
-    <xacro:property name="joint2_lower" value="${-pi/2}" />
-    <xacro:property name="joint2_upper" value="${pi/2}" />
+    <xacro:property name="joint2_lower" value="${-pi}" />
+    <xacro:property name="joint2_upper" value="${pi}" />
 
     <!-- Joint 2 visual-->
     <xacro:property name="link2_l" value="${cyl_joint_l}" />
