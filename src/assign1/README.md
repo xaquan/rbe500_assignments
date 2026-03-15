@@ -147,3 +147,107 @@ Topic publish joint controller
 ```bash
 ros2 topic pub --once /joint_group_position_controller/commands std_msgs/msg/Float64MultiArray "{data: [1.57, 0.5, 0.0, 1.2]}"
 ```
+
+## Clean colcon
+
+```bash
+unset AMENT_PREFIX_PATH
+unset CMAKE_PREFIX_PATH
+unset COLCON_PREFIX_PATH
+```
+
+## Test service
+
+position:
+- 0.8937289445557175
+- 1.1645558974513888
+- 6.646935660075472e-07
+
+```bash
+ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
+  ee_pose: {
+    position: {
+      x: 0.11798657510175536,
+      y: 0.6599652378111799,
+      z: 0.20000008879895975,
+    },
+    orientation: {
+      x: 0.5155538571770035,
+      y: 0.8568571761675969,
+      z: -3.8640312619604363e-08,
+      w: -6.258948909451002e-08,
+    }
+  }
+}"
+```
+
+
+position:
+- 0.8937289445557175
+- -1.164555897451389
+- 1.7251300655194996e-14
+
+```bash
+ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
+  ee_pose: {
+    position: {
+      x: 0.6191720269781495,
+      y: 0.2571011035588956,
+      z: 0.19999253768019631,
+    }, 
+    orientation: {
+      x: 0.9908455965788017,
+      y: -0.13500001385330784,
+      z: -7.345701144105147e-08,
+      w: 1.032493335218514e-08,
+    }
+  }
+}"
+```
+
+position:
+- -1.8145405844010012
+- -1.489548240926195
+- 1.8264391023626713e-14
+
+```bash
+ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
+  ee_pose: {
+    position: {
+      x: -0.45399130483070715,
+      y: -0.3800748181239815,
+      z: 0.2000001729892989,
+    }, 
+    orientation: {
+      x: 0.08115872552748345,
+      y: 0.9967011895602158,
+      z: -5.4062051934750056e-09,
+      w: -7.266067768353194e-08,
+    }
+  }
+}"
+```
+
+position:
+- 0.6770673822391795
+- 0.8395635539765824
+- 2.4658192120921487e-14
+
+```bash
+ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
+  ee_pose: {
+    position: {
+      x: 0.36968464038844434,
+      y: 0.6314160969609153,
+      z: 0.2000004303939951,
+    }, 
+    orientation: {
+      x: 0.725995492011969,
+      y: 0.6876994587595946,
+      z: 1.6757923795314082e-07,
+      w: -1.7780160732920303e-07,
+    }
+  }
+}"
+```
+
