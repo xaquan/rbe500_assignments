@@ -41,6 +41,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'fw_solver = assign1.fw_solver:main',
+            'inv_service = assign1.inv_service:main',
         ],
     },
 )
