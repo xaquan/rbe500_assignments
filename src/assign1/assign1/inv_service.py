@@ -12,13 +12,10 @@ class InverseKinematicsService(Node):
         self.srv = self.create_service(PoseToJointAngles, 'pose_to_joint_angles', self.pose_to_joint_angles_callback)
 
     def pose_to_joint_angles_callback(self, request, response):
-        print("Received request for inverse kinematics service")
-        print(f"Requested pose:\n{request}")
-        pose = request.ee_pose
-        
-        joint_angles = ScaraKinematicModel().inverse_kinematics_scara_robot(pose)  # Compute the inverse kinematics solution for the SCARA robot using the provided pose
 
-        print(f"Computed joint angles:\n{joint_angles}")
+        joint_angles = ScaraKinematicModel.inverse_kinematics_scara_robot(request.ee_pose)  # Compute the inverse kinematics solution for the SCARA robot using the provided pose
+
+        # print(f"Computed joint angles:\n{joint_angles}")
 
         response.joint_angles = joint_angles.tolist()  # Set the response with the computed joint angles
         return response

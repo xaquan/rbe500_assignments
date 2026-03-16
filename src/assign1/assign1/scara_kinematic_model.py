@@ -1,6 +1,7 @@
 
 import numpy as np
 from .converter_helper import ConverterHelper
+from scipy.spatial.transform import Rotation
 import sympy as sp
 
 class ScaraKinematicModel():
@@ -59,7 +60,8 @@ class ScaraKinematicModel():
             [0,  0,    0,  1]
         ])
 
-    def fk_T_symbolic_scara_robot(self):
+    @staticmethod
+    def get_Trans_end_effector_scara_robot_symbolic():
 
         """
             Computes the forward kinematics transformation matrix for a SCARA robot using symbolic variables.
@@ -90,39 +92,59 @@ class ScaraKinematicModel():
         T = sp.eye(4)
         for theta, d, a, alpha in DH:
             # Calculate the homogeneous transformation matrix for each joint and multiply them together
-            dh_std = self.dh_standard(theta, d, a, alpha)
+            dh_std = ScaraKinematicModel.dh_standard(theta, d, a, alpha)
             T = T @ dh_std
         return T
     
-    def print_symbolic_fk(self):
+    @staticmethod
+    def print_symbolic_fk():
         """
             Prints the symbolic forward kinematics transformation matrix for the SCARA robot.
             This method computes the symbolic forward kinematics transformation matrix for a 
             SCARA robot and prints it in a readable format. The transformation matrix is derived 
             from the Denavit-Hartenberg (DH)
         """
-        T_symbolic = self.fk_T_symbolic_scara_robot()
+        T_symbolic = ScaraKinematicModel.get_Trans_end_effector_scara_robot_symbolic()
         sp.pprint(T_symbolic)
     
-    def forward_kinematics_scara_robot(self, positions):
+    @staticmethod
+    def forward_kinematics_scara_robot(positions):
+        """
+            Calculate the forward kinematics transformation matrix for a SCARA robot manipulator.
+            This function computes the homogeneous transformation matrix representing the end-effector pose
+            relative to the base frame of a SCARA robot. The transformation is derived from the 
+            Denavit-Hartenberg (DH) parameters, which are defined based on the robot's joint angles and link dimensions.
+            Args:
+                positions (ndarray): A 1D array of 3 float values representing the joint angles [q1, q2, q3] in radians. 
+                Each angle corresponds to a joint of the SCARA robot manipulator.
+            Returns:
+                ndarray: A 4x4 homogeneous transformation matrix of the form:
+                    [[T11, T12, T13, Px],
+                     [T21, T22, T23, Py],
+                     [T31, T32, T33, Pz],
+                     [0,   0,   0,   1]]
+                where Tij represents the rotation components and (Px, Py, Pz) represents the position of the end-effector. 
+                The matrix is returned as a NumPy array of type float64 for
+        """
         if len(positions) != 3:
             raise ValueError("Expected 3 joint angles, got {}".format(len(positions)))
 
-        T_final_symbolic = self.fk_T_symbolic_scara_robot()
+        T_final_symbolic = ScaraKinematicModel.get_Trans_end_effector_scara_robot_symbolic()
 
         T_final = T_final_symbolic.subs({
             'q1': positions[0],
             'q2': positions[1],
             'q3': positions[2],
-            'd1': self.get_robot_configuration()['d1'],
-            'a1': self.get_robot_configuration()['a1'],
-            'a2': self.get_robot_configuration()['a2'],
-            'd3': self.get_robot_configuration()['d3'],
+            'd1': ScaraKinematicModel.get_robot_configuration()['d1'],
+            'a1': ScaraKinematicModel.get_robot_configuration()['a1'],
+            'a2': ScaraKinematicModel.get_robot_configuration()['a2'],
+            'd3': ScaraKinematicModel.get_robot_configuration()['d3'],
         })
 
         return np.array(T_final).astype(np.float64)
 
-    def inverse_kinematics_scara_robot(self, pose):
+    @staticmethod
+    def inverse_kinematics_scara_robot(pose):
         """
             Calculate the inverse kinematics solution for a SCARA robot manipulator.
             This function computes the joint angles (q1, q2, q3) required to achieve
@@ -136,14 +158,18 @@ class ScaraKinematicModel():
         """
 
         # Robot dimensions
-        d1 = self.get_robot_configuration()['d1']
-        a1 = self.get_robot_configuration()['a1']
-        a2 = self.get_robot_configuration()['a2']
-        d3 = self.get_robot_configuration()['d3']
+        d1 = ScaraKinematicModel.get_robot_configuration()['d1']
+        a1 = ScaraKinematicModel.get_robot_configuration()['a1']
+        a2 = ScaraKinematicModel.get_robot_configuration()['a2']
+        d3 = ScaraKinematicModel.get_robot_configuration()['d3']
 
         # Convert quaternion to rotation matrix
-        rotation = ConverterHelper.quat_to_rotation_array(
-            pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w) 
+        rotation = Rotation.from_quat([
+            pose.orientation.x,
+            pose.orientation.y,
+            pose.orientation.z,
+            pose.orientation.w
+        ]).as_matrix()
 
         r11 = rotation[0][0]
         r12 = rotation[0][1]
@@ -199,7 +225,7 @@ class ScaraKinematicModel():
         # print(f"beta_1: {beta_1}, beta_2: {beta_2}")
 
         q1_candidates = np.array([alpha_1 - beta_1, alpha_1 - beta_2, alpha_2 - beta_1, alpha_2 - beta_2])
-        k = np.argmin(np.abs(self.wrap_to_pi(q1_candidates)))
+        k = np.argmin(np.abs(ScaraKinematicModel.wrap_to_pi(q1_candidates)))
         # q1 = q1_candidates[k]
 
         # Solving for q2
@@ -217,7 +243,7 @@ class ScaraKinematicModel():
 
         q2_candidates = np.array([q2_1, q2_2])
         
-        k = np.argmin(np.abs(self.wrap_to_pi(q2_candidates)))
+        k = np.argmin(np.abs(ScaraKinematicModel.wrap_to_pi(q2_candidates)))
         # q2 = q2_candidates[k]
 
         # print(f"Found angles: {aangles}")
@@ -227,13 +253,14 @@ class ScaraKinematicModel():
         q3 = d1 - pose.position.z - d3
 
         
-        aangles = self.find_combinations(pose, q1_candidates, q2_candidates, q3)
+        aangles = ScaraKinematicModel.find_combinations(pose, q1_candidates, q2_candidates, q3)
         # return array float64 for better compatibility with ROS messages
         # return np.array([q1, q2, q3]).astype(np.float64)
         return aangles.astype(np.float64)
    
 
-    def find_combinations(self, pose, q1_candidates, q2_candidates, q3):        
+    @staticmethod
+    def find_combinations(pose, q1_candidates, q2_candidates, q3):
         """
             Verifies the correctness of the inverse kinematics solution by comparing the forward kinematics result with the desired pose.
             This function computes the forward kinematics using the provided joint angles and compares the resulting end-effector pose with the original target pose. It checks if the position and orientation of the computed pose are within a specified tolerance of the target pose, indicating whether the inverse kinematics solution is valid.
@@ -248,7 +275,7 @@ class ScaraKinematicModel():
         for q1 in q1_candidates:
             for q2 in q2_candidates:
                 joint_angles = np.array([q1, q2, q3])
-                pose_computed = self.forward_kinematics_scara_robot(joint_angles)
+                pose_computed = ScaraKinematicModel.forward_kinematics_scara_robot(joint_angles)
                 position_error = np.linalg.norm(pose_computed[:3, 3] - np.array([pose.position.x, pose.position.y, pose.position.z]))
                 orientation_error = np.linalg.norm(pose_computed[:3, :3] - ConverterHelper.quat_to_rotation_array(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w))
                 if position_error < 1e-3 and orientation_error < 1e-3:
