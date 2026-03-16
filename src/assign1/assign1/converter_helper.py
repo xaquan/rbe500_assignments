@@ -1,6 +1,6 @@
 import math
-
-from geometry_msgs.msg import Transform
+from scipy.spatial.transform import Rotation
+from geometry_msgs.msg import Pose, Transform
 
 class ConverterHelper:
 	@staticmethod
@@ -160,16 +160,64 @@ class ConverterHelper:
 			and the rotation is represented as a quaternion (x, y, z, w).
 		"""
 
-		translation = transform_matrix[0:3, 3]
-		rotation = ConverterHelper.rot_to_quat(transform_matrix[0:3, 0:3])
+		return ConverterHelper.transform_matrix_to_pose_transform_msg(transform_matrix, type="transform")
+	@staticmethod	
+	def transform_matrix_to_pose_msg(transform_matrix):
+		"""
+		Convert a 4x4 transformation matrix to a geometry_msgs/Pose message.
+		This function takes a 4x4 homogeneous transformation matrix, extracts the translation
+		Arguments:
+		- transform_matrix (list or array-like): A 4x4 transformation matrix where
+			transform_matrix[i][j] represents the element at row i, column j.
+		Returns:
+		- geometry_msgs.msg.Pose: A ROS Pose message containing the translation and rotation
+			extracted from the input transformation matrix. The translation is represented as a Vector3,
+			and the rotation is represented as a quaternion (x, y, z, w).
+		"""
+		return ConverterHelper.transform_matrix_to_pose_transform_msg(transform_matrix, type="pose")
 
-		res = Transform()
-		res.translation.x = translation[0]
-		res.translation.y = translation[1]
-		res.translation.z = translation[2]
-		res.rotation.x = rotation[0]
-		res.rotation.y = rotation[1]
-		res.rotation.z = rotation[2]
-		res.rotation.w = rotation[3]    
+	
+	@staticmethod
+	def transform_matrix_to_pose_transform_msg(transform_matrix, type="pose"):       
+		"""
+		Convert a 4x4 transformation matrix to a geometry_msgs/Pose or geometry_msgs/Transform message.
+		This function takes a 4x4 homogeneous transformation matrix, extracts the translation
+		Arguments:
+		- transform_matrix (list or array-like): A 4x4 transformation matrix where
+			transform_matrix[i][j] represents the element at row i, column j.
+		Returns:
+		- geometry_msgs.msg.Pose: A ROS Pose message containing the translation and rotation
+			extracted from the input transformation matrix. The translation is represented as a Vector3,
+			and the rotation is represented as a quaternion (x, y, z, w).
+		- geometry_msgs.msg.Transform: A ROS Transform message containing the translation and rotation
+			extracted from the input transformation matrix. The translation is represented as a Vector3,
+			and the rotation is represented as a quaternion (x, y, z, w).
+		"""
+
+		translation = transform_matrix[0:3, 3]
+		rotation = transform_matrix[0:3, 0:3]
+		# convert roation matrix to quaternion using numpy
+		quat = Rotation.from_matrix(rotation).as_quat()  # returns in the order of (x, y, z, w)
+		# rotation = ConverterHelper.rot_to_quat(transform_matrix[0:3, 0:3])
+		if type == "transform":
+			res = Transform()
+			res.translation.x = translation[0]
+			res.translation.y = translation[1]
+			res.translation.z = translation[2]
+			res.rotation.x = quat[0]
+			res.rotation.y = quat[1]
+			res.rotation.z = quat[2]
+			res.rotation.w = quat[3]    
+			return res
+			
+		res = Pose()
+		res.position.x = translation[0]
+		res.position.y = translation[1]
+		res.position.z = translation[2]
+		res.orientation.x = quat[0]
+		res.orientation.y = quat[1]
+		res.orientation.z = quat[2]
+		res.orientation.w = quat[3]    
 		return res
+	
 
