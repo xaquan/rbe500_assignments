@@ -84,7 +84,7 @@ def generate_launch_description():
     # Node to compute and publish end-effector pose based on joint states
     fw_solver_node = Node(
         package='assign1',            # Your package name
-        executable='fw_solver',       # Must match the string in console_scripts
+        executable='fk_solver',       # Must match the string in console_scripts
         name='forward_kinematics_node',
         output='screen',              # Ensures print() and get_logger() show in terminal
         parameters=[{'use_sim_time': True}]
@@ -92,7 +92,7 @@ def generate_launch_description():
 
     inv_service_node = Node(
         package='assign1',
-        executable='inv_service',
+        executable='ik_service',
         name='pose_to_joint_angles_server',
         output='screen',
         parameters=[{'use_sim_time': True}],

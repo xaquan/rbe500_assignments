@@ -226,12 +226,22 @@ unset CMAKE_PREFIX_PATH
 unset COLCON_PREFIX_PATH
 ```
 
+## Test service client
+
+
+
 ## Test service convert pose to joint positions
 
 position:
 - 0.8937289445557175
 - 1.1645558974513888
 - 6.646935660075472e-07
+
+```bash
+ros2 run assign1 ik_solver 0.11798657510175536 0.6599652378111799 0.20000008879895975 0.5155538571770035 0.8568571761675969 -3.8640312619604363e-08 -6.258948909451002e-08
+```
+
+OR
 
 ```bash
 ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles "{
