@@ -1,54 +1,30 @@
-# Assignment 1
+# Assignment 1: SCARA Robot Kinematics & Simulation
 
-## Summary
+This project involves the development of a SCARA (Selective Compliance Assembly Robot Arm) simulation environment in ROS 2, focusing on robot modeling, forward kinematics (FK) broadcasting, and an inverse kinematics (IK) service architecture.
 
-This assignment is to: 
-- Create a scara robot model for gazebo simulator.
-- Create a topic listen to robot joint position to calcuate forward kinematic to the ee pose,
-then publish to out as pose msg.
-- Create a service taking pose and calculate inverse kinematic to the joints.
-  + Create the interface which input is Pose msg type and repone with array
+---
 
-```bash
-.
-├── assign1
-│   ├── CMakeLists.txt
-│   ├── LICENSE
-│   ├── README.md
-│   ├── assign1
-│   │   ├── __init__.py
-│   │   ├── converter_helper.py
-│   │   ├── fw_solver.py
-│   │   ├── inv_service.py
-│   │   └── scara_kinematic_model.py
-│   ├── config
-│   │   └── gui.config
-│   ├── launch
-│   │   ├── display.launch.py
-│   │   └── gz_sim.launch.py
-│   ├── package.xml
-│   ├── resource
-│   │   └── assign1
-│   ├── rviz
-│   │   └── display.rviz
-│   ├── scripts
-│   ├── setup.cfg
-│   ├── setup.py
-│   ├── test
-│   │   ├── test_copyright.py
-│   │   ├── test_flake8.py
-│   │   └── test_pep257.py
-│   ├── urdf
-│   │   └── scara.urdf.xacro
-│   └── worlds
-│       └── empty.sdf
-└── assign1_interfaces
-    ├── CMakeLists.txt
-    ├── package.xml
-    └── srv
-        └── PoseToJointAngles.srv
-```
+## 📋 Project Objectives
 
+### 1. Robot Modeling & Simulation
+* **Model Creation**: Develop a URDF/Xacro representation of a SCARA robot.
+* **Gazebo Integration**: Configure the model with necessary physics, joint transmissions, and controllers for high-fidelity simulation within the **Gazebo** environment.
+
+### 2. Forward Kinematics (FK) Node
+* **Subscriber**: Listen to the `/joint_states` topic to retrieve real-time joint positions.
+* **Logic**: Calculate the Cartesian position and orientation of the End-Effector (EE) based on the current joint state.
+* **Publisher**: Broadcast the resulting coordinates as a `geometry_msgs/msg/Pose` to a dedicated output topic.
+
+### 3. Inverse Kinematics (IK) Service
+* **Service Server**: Implement a node that handles coordinate-to-joint transformations.
+* **Interface**: Define a custom service (`.srv`) or use standard interfaces to:
+    * **Request**: Accept a `geometry_msgs/msg/Pose` target.
+    * **Response**: Return a `float64[]` array containing the required joint angles/positions.
+* **Logic**: Compute the mathematical IK solution for the SCARA configuration upon request.
+
+### 4. Integration & Validation
+* **Service Client**: Develop a test node to interface with the IK Server.
+* **Workflow**: The client sends a goal `Pose`, receives the calculated joint parameters, and logs the results to the terminal for verification.
 
 ## Clone the project
 
