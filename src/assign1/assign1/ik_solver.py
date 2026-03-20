@@ -28,16 +28,6 @@ def main():
 
     inverse_kinematics_client = InverseKinematicsClient()
 
-    # ee_pose = Pose()
-    # ee_pose.position.x = float(sys.argv[1])
-    # ee_pose.position.y = float(sys.argv[2])
-    # ee_pose.position.z = float(sys.argv[3])
-    # ee_pose.orientation.x = float(sys.argv[4])
-    # ee_pose.orientation.y = float(sys.argv[5])
-    # ee_pose.orientation.z = float(sys.argv[6])
-    # ee_pose.orientation.w = float(sys.argv[7])
-
-    # msg = convert_string_to_msg(sys.argv[1], sys.argv[2])
     data = yaml.safe_load(sys.argv[1])
     msg =  Pose()
 
@@ -47,7 +37,7 @@ def main():
     rclpy.spin_until_future_complete(inverse_kinematics_client, future)
     reponse = future.result()
     if reponse is not None:
-        print(f"Received joint angles:\n{reponse.joint_angles}")
+        print(f"Calculated joint angles:\n{reponse.joint_angles}")
     else:
         print("Service call failed")
 
