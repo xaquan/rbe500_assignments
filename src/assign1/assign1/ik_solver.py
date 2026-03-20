@@ -1,7 +1,10 @@
 import sys
 from assign1_interfaces.srv import PoseToJointAngles
 from .scara_kinematic_model import ScaraKinematicModel
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose    
+from rosidl_runtime_py.set_message import set_message_fields
+import yaml
+
 
 import rclpy
 from rclpy.node import Node
@@ -14,29 +17,33 @@ class InverseKinematicsClient(Node):
             self.get_logger().info('Service not available, waiting again...')
         self.req = PoseToJointAngles.Request()
 
-    def send_request(self, ee_pose):
+    def send_request(self, msg):
 
-        self.req.ee_pose = ee_pose
+        self.req.ee_pose = msg
         self.future = self.cli.call_async(self.req)
         return self.future
-
 
 def main():
     rclpy.init()
 
     inverse_kinematics_client = InverseKinematicsClient()
 
-    ee_pose = Pose()
-    ee_pose.position.x = float(sys.argv[1])
-    ee_pose.position.y = float(sys.argv[2])
-    ee_pose.position.z = float(sys.argv[3])
-    ee_pose.orientation.x = float(sys.argv[4])
-    ee_pose.orientation.y = float(sys.argv[5])
-    ee_pose.orientation.z = float(sys.argv[6])
-    ee_pose.orientation.w = float(sys.argv[7])
+    # ee_pose = Pose()
+    # ee_pose.position.x = float(sys.argv[1])
+    # ee_pose.position.y = float(sys.argv[2])
+    # ee_pose.position.z = float(sys.argv[3])
+    # ee_pose.orientation.x = float(sys.argv[4])
+    # ee_pose.orientation.y = float(sys.argv[5])
+    # ee_pose.orientation.z = float(sys.argv[6])
+    # ee_pose.orientation.w = float(sys.argv[7])
 
+    # msg = convert_string_to_msg(sys.argv[1], sys.argv[2])
+    data = yaml.safe_load(sys.argv[1])
+    msg =  Pose()
 
-    future = inverse_kinematics_client.send_request(ee_pose)
+    set_message_fields(msg, data)
+
+    future = inverse_kinematics_client.send_request(msg)
     rclpy.spin_until_future_complete(inverse_kinematics_client, future)
     reponse = future.result()
     if reponse is not None:
