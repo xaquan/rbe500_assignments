@@ -15,7 +15,39 @@ b) Design and tune a PD controller for the last joint. Parameter tuning can be d
 c) Implement a service that receives a reference position for the last joint and drives the joint to that target.
 d) Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
 
-##  To launch gazebo:
+## To launch Gazebo
+not working yet
 ```bash
 ros2 launch assign2 gazebo_classic.launch.py
+```
+
+## To call the Gazebo effort service
+First, check which effort service is available:
+
+```bash
+ros2 service list | grep apply_joint_effort
+```
+
+In Gazebo Classic, the service is commonly available as `/gazebo/apply_joint_effort`.
+
+Example service call:
+
+```bash
+ros2 service call /gazebo/apply_joint_effort gazebo_msgs/srv/ApplyJointEffort "{
+  joint_name: 'joint3',
+  effort: 2.0,
+  start_time: {sec: 0, nanosec: 0},
+  duration: {sec: 1, nanosec: 0}
+}"
+```
+
+If your setup exposes `/apply_joint_effort` instead, use the same command with that service name:
+
+```bash
+ros2 service call /apply_joint_effort gazebo_msgs/srv/ApplyJointEffort "{
+  joint_name: 'joint3',
+  effort: 2.0,
+  start_time: {sec: 0, nanosec: 0},
+  duration: {sec: 1, nanosec: 0}
+}"
 ```
