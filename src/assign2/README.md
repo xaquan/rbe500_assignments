@@ -22,7 +22,6 @@ colcon build --packages-select assign2
 source install/setup.bash
 ```
 ## To launch Gazebo
-"not working yet"
 ```bash
 ros2 launch assign2 gazebo_classic.launch.py
 ```
