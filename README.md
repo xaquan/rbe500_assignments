@@ -249,6 +249,13 @@ ros2 service call /pose_to_joint_angles assign1_interfaces/srv/PoseToJointAngles
 }"
 ```
 
+result:
+
+```bash
+response:
+assign1_interfaces.srv.PoseToJointAngles_Response(joint_angles=[0.8937288754776596, -1.1645557702532858, 7.462319803697159e-06])
+```
+
 
 position:
 - 0.8937289445557175
