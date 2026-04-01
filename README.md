@@ -1,11 +1,10 @@
 ## Clone the project
 
-Create new folder
-
+### Create new folder
 ```bash
 mkdir assignments
 ```
-
+### Clone repository
 ```bash
 cd assignments
 git clone https://github.com/xaquan/rbe500_assignments.git
