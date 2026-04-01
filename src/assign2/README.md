@@ -30,8 +30,8 @@ ros2 service list | grep apply_joint_effort
 
 In Gazebo Classic, the service is commonly available as `/gazebo/apply_joint_effort`.
 
-effort: 1.0 is move downward
-effort: -51.0, is move upward
+`effort: 1.0` is move downward
+`effort: -51.0` is move upward
 
 Example service call:
 
