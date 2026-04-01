@@ -35,13 +35,11 @@ colcon build
 source install/setup.bash
 ```
 
-# [Assignment 1 README](project1/README.md)
+# [Assignment 1](src/assign1)
+Build a SCARA robot, calculate FK, IK of the robot
+Learn more in this [readme]((src/assign1/README.md))
 
-##  To launch RViz:
-```bash
-ros2 launch assign1 display.launch.py
-```
-##  To launch gazebo:
-```bash
-ros2 launch assign1 gz_sim.launch.py
-```
+
+# [Assignment 2](src/assign2)
+Model robot controller
+Learn more in this [readme]((src/assign2/README.md))

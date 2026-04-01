@@ -26,6 +26,15 @@ This project involves the development of a SCARA (Selective Compliance Assembly 
 * **Service Client**: Develop a test node to interface with the IK Server.
 * **Workflow**: The client sends a goal `Pose`, receives the calculated joint parameters, and logs the results to the terminal for verification.
 
+##  To launch RViz:
+```bash
+ros2 launch assign1 display.launch.py
+```
+##  To launch gazebo:
+```bash
+ros2 launch assign1 gz_sim.launch.py
+```
+
 # Test
 
 ## Check topic list:

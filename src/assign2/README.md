@@ -1,0 +1,21 @@
+# Assignment 2: Joint Position Controller
+
+This assignment focuses on building a ROS 2 position controller node for the SCARA robot in Gazebo. The controller should read the robot joint states, compute the control effort for the last joint, and drive that joint to a requested reference position.
+
+## Project Objective
+
+### 1. Fix the Joints
+Modify the robot description so that all joints except the last one are set to `fixed`. Only the final joint should remain movable and available for control.
+
+### 2. Write a Position Controller Node
+Develop a ROS 2 node that reads the joint positions from Gazebo and sends effort commands to the last joint through `/gazebo/apply_joint_effort`.
+
+a) Read the current joint positions from Gazebo.
+b) Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
+c) Implement a service that receives a reference position for the last joint and drives the joint to that target.
+d) Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
+
+##  To launch gazebo:
+```bash
+ros2 launch assign2 gazebo_classic.launch.py
+```
