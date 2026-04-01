@@ -26,6 +26,13 @@ This project involves the development of a SCARA (Selective Compliance Assembly 
 * **Service Client**: Develop a test node to interface with the IK Server.
 * **Workflow**: The client sends a goal `Pose`, receives the calculated joint parameters, and logs the results to the terminal for verification.
 
+##  To build the package:
+```bash
+source /opt/ros/humble/setup.bash
+colcon build --packages-select assign1 assign1_interfaces
+source install/setup.bash
+```
+
 ##  To launch RViz:
 ```bash
 ros2 launch assign1 display.launch.py

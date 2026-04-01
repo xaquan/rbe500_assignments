@@ -15,6 +15,12 @@ b) Design and tune a PD controller for the last joint. Parameter tuning can be d
 c) Implement a service that receives a reference position for the last joint and drives the joint to that target.
 d) Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
 
+##  To build the package:
+```bash
+source /opt/ros/humble/setup.bash
+colcon build --packages-select assign2
+source install/setup.bash
+```
 ## To launch Gazebo
 "not working yet"
 ```bash
