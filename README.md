@@ -7,6 +7,7 @@ mkdir assignments
 ```
 
 ```bash
+cd assignments
 git clone https://github.com/xaquan/rbe500_assignments.git
 ```
 
