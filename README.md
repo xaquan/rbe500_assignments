@@ -35,6 +35,14 @@ colcon build
 source install/setup.bash
 ```
 
+## Clean colcon
+
+```bash
+unset AMENT_PREFIX_PATH
+unset CMAKE_PREFIX_PATH
+unset COLCON_PREFIX_PATH
+```
+
 # [Assignment 1](src/assign1)
 Build a SCARA robot, calculate FK, IK of the robot
 
