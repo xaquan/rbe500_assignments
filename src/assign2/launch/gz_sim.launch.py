@@ -53,12 +53,12 @@ def generate_launch_description():
     )
 
     # Bridge simulation clock so ROS nodes use Gazebo Sim time consistently.
-    clock_bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
-        output='screen'
-    )
+    # clock_bridge = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock'],
+    #     output='screen'
+    # )
 
     # Bridge for joint states and trajectories
     joint_state_bridge = Node(
@@ -66,6 +66,16 @@ def generate_launch_description():
         executable='parameter_bridge',
         arguments=[
             '/joint_states@sensor_msgs/msg/JointState@ignition.msgs.Model',
+        ],
+        output='screen'
+    )
+
+    # Bridge ROS Float64 commands to Gazebo Sim ApplyJointForce for joint3
+    apply_joint_force_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/model/scara_robot/joint/joint3/cmd_force@std_msgs/msg/Float64]ignition.msgs.Double',
         ],
         output='screen'
     )
@@ -135,10 +145,11 @@ def generate_launch_description():
             }.items(),
         ),
         robot_state_publisher,
-        clock_bridge,
+        # clock_bridge,
         # joint_trajectory_bridge,
         spawn_robot,
         joint_state_bridge,
+        apply_joint_force_bridge,
         # pose_bridge,
         # fw_solver_node,
         # inv_service_node
