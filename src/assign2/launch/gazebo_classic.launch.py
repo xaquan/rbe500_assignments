@@ -3,7 +3,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler, TimerAction
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration
 from launch_ros.actions import Node
@@ -16,16 +17,23 @@ def generate_launch_description():
     gazebo_ros_pkg_path = get_package_share_directory('gazebo_ros')
 
     default_xacro_path = os.path.join(pkg_share_path, 'urdf', 'scara_fixed_joints_classic.urdf.xacro')
+    default_controllers_path = os.path.join(pkg_share_path, 'config', 'joint_state_broadcaster.yaml')
     declare_model = DeclareLaunchArgument(
         'model',
         default_value=default_xacro_path,
         description='Absolute path to robot Xacro file',
     )
+    declare_controllers = DeclareLaunchArgument(
+        'controllers_file',
+        default_value=default_controllers_path,
+        description='Absolute path to controller configuration file',
+    )
 
     model = LaunchConfiguration('model')
+    controllers_file = LaunchConfiguration('controllers_file')
 
     robot_description = ParameterValue(
-        Command(['xacro', ' ', model]),
+        Command(['xacro', ' ', model, ' ', 'controllers_file:=', controllers_file]),
         value_type=str,
     )
 
@@ -61,9 +69,32 @@ def generate_launch_description():
         ],
     )
 
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        output='screen',
+        arguments=[
+            'joint_state_broadcaster',
+            '--controller-manager',
+            '/controller_manager',
+            '--controller-manager-timeout',
+            '60',
+        ],
+    )
+
+    # load_joint_state_broadcaster = RegisterEventHandler(
+    #     OnProcessExit(
+    #         target_action=spawn_robot,
+    #         on_exit=[TimerAction(period=5.0, actions=[joint_state_broadcaster_spawner])],
+    #     )
+    # )
+
     return LaunchDescription([
         declare_model,
+        declare_controllers,
         gazebo,
         robot_state_publisher,
         spawn_robot,
+        # load_joint_state_broadcaster,
+        # joint_state_broadcaster_spawner
     ])
