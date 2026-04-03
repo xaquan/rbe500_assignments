@@ -23,39 +23,23 @@ source install/setup.bash
 ```
 ## To launch Gazebo
 ```bash
-ros2 launch assign2 gazebo_classic.launch.py
+ros2 launch assign2 gz_sim.launch.py
 ```
 
-## To call the Gazebo effort service
+## To pub the Gazebo effort topic
 First, check which effort service is available:
 
 ```bash
-ros2 service list | grep apply_joint_effort
+ros2 topic list | grep /model/scara_robot/joint/joint3/cmd_force
 ```
 
-In Gazebo Classic, the service is commonly available as `/gazebo/apply_joint_effort`.
+- `data: 3.0` is move downward.
+- `data: -199.0` is move upward.
 
-- `effort: 1.0` is move downward.
-- `effort: -51.0` is move upward.
+"The effort determined by the mass and dynamic setting in the model configuration"
 
-Example service call:
-
-```bash
-ros2 service call /gazebo/apply_joint_effort gazebo_msgs/srv/ApplyJointEffort '{
-  joint_name: joint3,
-  effort: 1.0,
-  start_time: {sec: 0, nanosec: 0},
-  duration: {sec: 1, nanosec: 0}
-}'
-```
-
-If your setup exposes `/apply_joint_effort` instead, use the same command with that service name:
+Example pub effort:
 
 ```bash
-ros2 service call /apply_joint_effort gazebo_msgs/srv/ApplyJointEffort '{
-  joint_name: joint3,
-  effort: -51.0,
-  start_time: {sec: 0, nanosec: 0},
-  duration: {sec: 1, nanosec: 0}
-}'
+ros2 topic pub --once /model/scara_robot/joint/joint3/cmd_force std_msgs/msg/Float64 "{data: -199.0}"
 ```
