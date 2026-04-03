@@ -164,14 +164,6 @@ ros2 topic pub --once /model/scara_robot/joint_trajectory trajectory_msgs/msg/Jo
 ros2 topic pub --once /joint_group_position_controller/commands std_msgs/msg/Float64MultiArray "{data: [1.57, 0.5, 0.0, 1.2]}"
 ```
 
-## Clean colcon
-
-```bash
-unset AMENT_PREFIX_PATH
-unset CMAKE_PREFIX_PATH
-unset COLCON_PREFIX_PATH
-```
-
 ## Test service client
 
 
