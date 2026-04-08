@@ -29,7 +29,7 @@ kd = 2*xi*wn*m - b
 pd_output = self._PD_Controller(error, kp, kd, self.dt)
 effort = pd_output + mg  # Compensate for estimated gravity disturbance
 ```
-![Close loop control diagram](src/assign2/images/CLCD.jpeg)
+![Close loop control diagram](/src/assign2/images/CLCD.jpeg)
 
 ##  To build the package:
 ```bash
