@@ -105,3 +105,10 @@ timestamp,current_position,target_position,error,effort
 1775638106513526981,0.0197,0.2000,0.1803,-56.8073
 ...
 ```
+
+## Plot target and current positions
+
+![Tracking position 1](/src/assign2/images/Position%20Plot1.png)
+
+![Tracking position 2](/src/assign2/images/Position%20Plot2.png)
+
