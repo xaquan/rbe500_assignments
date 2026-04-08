@@ -1,0 +1,8 @@
+# Request: Joint command target
+string joint_name
+float64 target_position
+---
+# Response: Command status
+bool status
+string joint_name
+string msg
