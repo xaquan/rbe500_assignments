@@ -10,10 +10,10 @@ Modify the robot description so that all joints except the last one are set to `
 ### 2. Write a Position Controller Node
 Develop a ROS 2 node that reads the joint positions from Gazebo and sends effort commands to the last joint through `/model/scara_robot/joint/joint3/cmd_force`.
 
-a)  Read the current joint positions from Gazebo.
-b)  Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
-c)  Implement a service that receives a reference position for the last joint and drives the joint to that target.
-d)  Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
+- [x] Read the current joint positions from Gazebo.
+- [x] Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
+- [x] Implement a service that receives a reference position for the last joint and drives the joint to that target.
+- [x] Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
 
 ##  To build the package:
 ```bash
