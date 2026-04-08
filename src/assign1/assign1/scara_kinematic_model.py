@@ -207,11 +207,13 @@ class ScaraKinematicModel():
         """
 
         cos_alpha = px / r1
+        cos_alpha = np.clip(cos_alpha, -1, 1)  # Ensure the value is within the valid range for arccos
         sin_alpha = np.sqrt(1 - cos_alpha**2)
 
         # print(f"cos_alpha: {cos_alpha}, sin_alpha: {sin_alpha}")
 
         cos_beta = (a1**2 + r1**2 - a2**2) / (2*a1*r1)
+        cos_beta = np.clip(cos_beta, -1, 1)  # Ensure the value is within the valid range for arccos
         sin_beta = np.sqrt(1 - cos_beta**2)
 
         # print(f"cos_beta: {cos_beta}, sin_beta: {sin_beta}")
