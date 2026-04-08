@@ -38,8 +38,6 @@ ros2 topic list | grep /model/scara_robot/joint/joint3/cmd_force
 
 "The effort determined by the mass and dynamic setting in the model configuration"
 
-
-
 Example pub effort:
 
 ```bash
@@ -50,4 +48,21 @@ Echo joint states topic in another terminal to see the joint changing
 
 ```bash
 ros2 topic echo /joint_states
+```
+
+## Test joint control client
+```bash
+ros2 run assign2 joint_control_client joint3 0.1
+```
+
+After sending the joint position, the control service will log the position of current and target to csv file. Data is used to plot in matlab
+
+path: `/src/joint_data`
+
+example data:
+```bash
+timestamp,current_position,target_position,error,effort
+1775638086179752984,0.2000,0.2000,-0.0000,-98.1000
+1775638086181376913,0.2000,0.2000,-0.0000,-98.1000
+1775638086183048163,0.2000,0.2000,-0.0000,-98.1000
 ```
