@@ -55,9 +55,16 @@ ros2 topic echo /joint_states
 ros2 run assign2 joint_control_client joint3 0.1
 ```
 
-After sending the joint position, the control service will log the position of current and target to csv file. Data is used to plot in matlab
+After sending the joint position, the control service will log the position of current and target to csv file in `/joint_data`. Data is used to plot in matlab
 
-path: `/src/joint_data`
+```bash
+.
+├── build
+├── install
+├── joint_data
+├── log
+└── src
+```
 
 example data:
 ```bash
