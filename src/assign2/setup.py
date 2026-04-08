@@ -41,7 +41,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'joint_effort_controller = assign2.joint_effort_controller:main',
+            'joint_control_service = assign2.joint_control_service:main',
+            'joint_control_client = assign2.joint_control_client:main',
         ],
     },
 )
