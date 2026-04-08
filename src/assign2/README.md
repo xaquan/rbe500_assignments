@@ -8,7 +8,7 @@ This assignment focuses on building a ROS 2 position controller node for the SCA
 Modify the robot description so that all joints except the last one are set to `fixed`. Only the final joint should remain movable and available for control.
 
 ### 2. Write a Position Controller Node
-Develop a ROS 2 node that reads the joint positions from Gazebo and sends effort commands to the last joint through `/gazebo/apply_joint_effort`.
+Develop a ROS 2 node that reads the joint positions from Gazebo and sends effort commands to the last joint through `/model/scara_robot/joint/joint3/cmd_force`.
 
 a) Read the current joint positions from Gazebo.
 b) Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
@@ -38,8 +38,16 @@ ros2 topic list | grep /model/scara_robot/joint/joint3/cmd_force
 
 "The effort determined by the mass and dynamic setting in the model configuration"
 
+
+
 Example pub effort:
 
 ```bash
 ros2 topic pub --once /model/scara_robot/joint/joint3/cmd_force std_msgs/msg/Float64 "{data: -199.0}"
+```
+
+Echo joint states topic in another terminal to see the joint changing
+
+```bash
+ros2 topic echo /joint_states
 ```
