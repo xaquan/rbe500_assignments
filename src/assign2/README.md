@@ -10,10 +10,26 @@ Modify the robot description so that all joints except the last one are set to `
 ### 2. Write a Position Controller Node
 Develop a ROS 2 node that reads the joint positions from Gazebo and sends effort commands to the last joint through `/model/scara_robot/joint/joint3/cmd_force`.
 
-- [x] Read the current joint positions from Gazebo.
-- [x] Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
-- [x] Implement a service that receives a reference position for the last joint and drives the joint to that target.
-- [x] Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
+- [x] 1. Read the current joint positions from Gazebo.
+- [x] 2. Design and tune a PD controller for the last joint. Parameter tuning can be done experimentally; no manual calculation is required.
+- [x] 3. Implement a service that receives a reference position for the last joint and drives the joint to that target.
+- [x] 4. Record both the reference position and the actual joint position in a text file, then plot the results in Matlab.
+
+## PD Design:
+```bash
+m = 10 # mass 10kg
+b = 0.5 # Friction
+xi = 1 # Critically damped, not overshoot
+ts = 0.5 # Settling time 0.5s/m
+mg = m * -9.81  # Estimate gravity disturbance based on current joint position
+wn = 5.3/(ts*xi) # For the error is 0.5%
+kp = wn**2 * m
+kd = 2*xi*wn*m - b
+
+pd_output = self._PD_Controller(error, kp, kd, self.dt)
+effort = pd_output + mg  # Compensate for estimated gravity disturbance
+```
+![Close loop control diagram](src/assign2/images/CLCD.jpeg)
 
 ##  To build the package:
 ```bash
