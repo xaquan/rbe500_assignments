@@ -8,30 +8,21 @@ from rclpy.node import Clock, Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
 
-from assignment_interfaces.srv import SetJointEffort
+from assignment_interfaces.srv import SetJointPosition
 
 
 class JointControlService(Node):
     def __init__(self):
         super().__init__('joint_control_service')
 
-        # self.declare_parameter('command_topic', '/model/scara_robot/joint/joint3/cmd_force')
-        # self.declare_parameter('joint_states_topic', '/joint_states')
-        # self.declare_parameter('service_name', 'set_joint_effort')
-        self.declare_parameter('joint_name', 'joint3')
-        self.declare_parameter('kd', 17)
-        self.declare_parameter('kp', 114)
-        self.declare_parameter('dt', 0.02)  # 20ms control loop
-
-        # command_topic = str(self.get_parameter('command_topic').value)
-        joint_name = str(self.get_parameter('joint_name').value)
-        command_topic = f'/model/scara_robot/joint/{joint_name}/cmd_force'
+        # command_topic = '/model/scara_robot/joint/joint3/cmd_force'
         joint_states_topic = "/joint_states"
         service_name = "set_joint_position"
         
-        self.kp = float(self.get_parameter('kp').value)
-        self.kd = float(self.get_parameter('kd').value)
-        self.dt = float(self.get_parameter('dt').value)
+        self.kp = 0.0
+        self.kd = 0.0
+        self.dt = 0.0
+        self.gravity_compensation = 0.0
 
         self.last_joint_state_stamp = None
         self.tracked_joint_name = None
@@ -45,21 +36,24 @@ class JointControlService(Node):
         self.data_directory = 'joint_data'
         self.filepath = None
         self.clock = Clock()
+        self._effort_pub = {}
 
-        self._effort_pub = self.create_publisher(Float64, command_topic, 10)
+        self._calculate_pd_parameters_joint3()
+
+        # self._effort_pub['joint3'] = self.create_publisher(Float64, command_topic.replace('{joint_name}', 'joint3'), 10)
+
         self._joint_state_sub = self.create_subscription(
             JointState,
             joint_states_topic,
             self._joint_states_callback,
             10,
         )
-        self._srv = self.create_service(SetJointEffort, service_name, self._handle_request)
-        # self._control_timer = self.create_timer(self.dt, self._control_loop)
-        
+        self._srv = self.create_service(SetJointPosition, service_name, self._handle_request)
+
         self.get_logger().info(
             'Joint control service ready: '
-            f"service='{service_name}', topic='{command_topic}', "
-            f"joint_states='{joint_states_topic}', tracked_joint='{self.tracked_joint_name}'"
+            f"service='{service_name}', "
+            f"joint_states='{joint_states_topic}''"
         )
 
         self.create_data_file()  # Create new data file for logging position data
@@ -76,12 +70,20 @@ class JointControlService(Node):
                     break
                 f.write(data + '\n')
 
-    
+    # Create publishers for each joint, if self._joint_pubs is empty, create publishers for all joints in self.joint_positions
+    def _create_publisher(self,  joint_names):
+        if not self._effort_pub:
+            for joint_name in joint_names:
+                topic = f'/model/scara_robot/joint/{joint_name}/cmd_force'
+                self._effort_pub[joint_name] = self.create_publisher(Float64, topic, 10)
+                self.get_logger().info(f'Created publisher for joint "{joint_name}" on topic "{topic}"')
 
     def _joint_states_callback(self, msg: JointState) -> None:
         stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         self.dt = stamp - self.last_joint_state_stamp if self.last_joint_state_stamp is not None else 0.0
         self.last_joint_state_stamp = stamp
+
+        self._create_publisher(msg.name)
 
         for name, position in zip(msg.name, msg.position):
             self.joint_positions[name] = float(position)
@@ -118,14 +120,6 @@ class JointControlService(Node):
             f.write('timestamp,current_position,target_position,error,effort\n')
         self.get_logger().info(f'Created new data file: {self.filepath}')
 
-        
-
-    # def _clear_goal(self):
-    #     self.target_joint_position = None
-    #     self._pre_error = 0.0
-    #     self.active_goal = False
-    #     self.get_logger().info(f'Cleared target for joint "{self.tracked_joint_name}"') 
-    
     def _set_goal(self, joint_name: str, target_position: float):
         self.tracked_joint_name = joint_name
         self.target_joint_position = target_position
@@ -163,64 +157,47 @@ class JointControlService(Node):
         )
         return response
     
+    def _calculate_pd_parameters_joint3(self):
+        m = 10
+        b = 0.5
+        xi = 1
+        ts = 0.5
+        self.gravity_compensation = m * -9.81  # Estimate gravity disturbance based on current joint position
+        wn = 5.3/(ts*xi)
+        self.kp = wn**2 * m
+        self.kd = 2*xi*wn*m - b
+
+        self.get_logger().info(
+            f'Calculated PD parameters for joint "{self.tracked_joint_name}": '
+            f'ts={ts:.4f}, xi={xi:.4f}, kp={self.kp:.4f}, kd={self.kd:.4f}, mg={self.gravity_compensation:.4f}, wn={wn:.4f}'
+        )
 
     def _apply_effort(self):
                        
         error = self.target_joint_position - self.joint_current_position
 
-        # if abs(error) <= self.tolerance:
-        #     self.get_logger().info(
-        #         f'Goal reached for "{self.tracked_joint_name}": '
-        #         f'current={self.joint_current_position:.4f}, '
-        #         f'target={self.target_joint_position:.4f}, error={error:.4f}'
-        #     )
-        #     return True
-
-        m = 10
-        b = 0.5
-        xi = 1
-        ts = 0.5
-        mg = m * -9.81  # Estimate gravity disturbance based on current joint position
-        wn = 5.3/(ts*xi)
-        kp = wn**2 * m
-        kd = 2*xi*wn*m - b
-
-        # Log the calculated PD parameters
-        self.get_logger().info(
-            f'Calculated PD parameters for joint "{self.tracked_joint_name}": '
-            f'ts={ts:.4f}, xi={xi:.4f}, kp={kp:.4f}, kd={kd:.4f}, mg={mg:.4f}, wn={wn:.4f}'
-        )
-        pd_output = self._PD_Controller(error, kp, kd, self.dt)
-        effort = pd_output + mg  # Compensate for estimated gravity disturbance
+        effort = self._PD_Controller(error, self.kp, self.kd, self.dt, self.gravity_compensation)
         
-        self.get_logger().info(
-            f'Calculated effort={pd_output:.4f} to apply to joint "{self.tracked_joint_name}" '
-            f'Publishing effort={effort:.4f} to joint "{self.tracked_joint_name}" '
-            f'(current={self.joint_current_position:.4f}, '
-            f'target={self.target_joint_position:.4f}, error={error:.4f})'
-        )
-
-        self._publish_cmd_force(effort)
+        self._publish_cmd_force(self.tracked_joint_name, effort)
         self._save_position_data(error, effort)  
 
         return False
     
     # Publish effort command to the joint
-    def _publish_cmd_force(self, effort: float):
+    def _publish_cmd_force(self, joint_name: str, effort: float):
         msg = Float64()
         msg.data = effort
-        self._effort_pub.publish(msg)
+        self._effort_pub[joint_name].publish(msg)
 
     # PD controller
-    def _PD_Controller(self, error: float, kp: float, kd: float, dt: float) -> float:
+    def _PD_Controller(self, error: float, kp: float, kd: float, dt: float, disturbance: float = 0.0) -> float:
        
-
         derivative = (error - self._pre_error) / dt
         # effort = self.kp * error + self.kd * derivative
         effort = kp * error + kd * derivative
         self._pre_error = error
 
-        return effort
+        return effort + disturbance
 
 
 def main(args=None):
