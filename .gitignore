@@ -1,6 +1,7 @@
 build/
 install/
 log/
-*.vscode/
+.vscode/
 **/__pycache__/
 *.py[cod]
+.vscode/settings.json
