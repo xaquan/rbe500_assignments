@@ -42,7 +42,7 @@ setup(
     entry_points={
         'console_scripts': [
             'joint_control_service = assign2.joint_control_service:main',
-            'joint_control_client = assign2.joint_control_client:main',
+            'set_position_joint3 = assign2.set_position_joint3:main',
         ],
     },
 )
