@@ -49,15 +49,15 @@ First, check which effort service is available:
 ros2 topic list | grep /model/scara_robot/joint/joint3/cmd_force
 ```
 
-- `data: 3.0` is move downward.
-- `data: -199.0` is move upward.
+- `data: -50` is move downward.
+- `data: -100.0` is move upward.
 
 "The effort determined by the mass and dynamic setting in the model configuration"
 
 Example pub effort:
 
 ```bash
-ros2 topic pub --once /model/scara_robot/joint/joint3/cmd_force std_msgs/msg/Float64 "{data: -199.0}"
+ros2 topic pub --once /model/scara_robot/joint/joint3/cmd_force std_msgs/msg/Float64 "{data: -100.0}"
 ```
 
 Echo joint states topic in another terminal to see the joint changing
@@ -71,7 +71,7 @@ ros2 topic echo /joint_states
 Change `0.1` to any position. The limit of the joint is 0.0-0.2 `downward`
 
 ```bash
-ros2 run assign2 set_position_joint3 0.1
+ros2 run assign2 joint_control_client joint3 0.1
 ```
 
 After sending the joint position, the control service will log the position of current and target to csv file in `/joint_data`. Data is used to plot in matlab

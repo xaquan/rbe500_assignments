@@ -1,19 +1,21 @@
 import sys
+
 import rclpy
 from rclpy.node import Node
+
 from assignment_interfaces.srv import SetJointPosition
 
 
-class SetPositionJoint3(Node):
+class JointControlClient(Node):
     def __init__(self):
-        super().__init__('set_position_joint3')
+        super().__init__('joint_control_client')
         self.cli = self.create_client(SetJointPosition, 'set_joint_position')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Service not available, waiting again...')
         self.req = SetJointPosition.Request()
 
-    def send_request(self, target_position: float):
-        self.req.joint_name = 'joint3'
+    def send_request(self, joint_name: str, target_position: float):
+        self.req.joint_name = joint_name
         self.req.target_position = target_position
         return self.cli.call_async(self.req)
 
@@ -21,22 +23,24 @@ class SetPositionJoint3(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    if len(sys.argv) != 2:
-        print('Usage: ros2 run assign2 set_position_joint3 <target_position>')
+    if len(sys.argv) != 3:
+        print('Usage: ros2 run assign2 joint_control_client <joint_name> <target_position>')
         rclpy.shutdown()
         return
+
+    joint_name = sys.argv[1]
 
     try:
-        target_position = float(sys.argv[1])
+        target_position = float(sys.argv[2])
     except ValueError:
-        print(f'Invalid target_position: {sys.argv[1]}')
+        print(f'Invalid target_position: {sys.argv[2]}')
         rclpy.shutdown()
         return
 
-    set_position_joint3 = SetPositionJoint3()
-    future = set_position_joint3.send_request(target_position)
+    joint_control_client = JointControlClient()
+    future = joint_control_client.send_request(joint_name, target_position)
 
-    rclpy.spin_until_future_complete(set_position_joint3, future)
+    rclpy.spin_until_future_complete(joint_control_client, future)
     response = future.result()
 
     if response is not None:
@@ -48,7 +52,7 @@ def main(args=None):
     else:
         print('Service call failed')
 
-    set_position_joint3.destroy_node()
+    joint_control_client.destroy_node()
     rclpy.shutdown()
 
 
