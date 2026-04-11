@@ -159,13 +159,14 @@ class JointControlService(Node):
     
     def _calculate_pd_parameters_joint3(self):
         m = 10
-        b = 0.5
+        j = m
+        b = 1
         xi = 1
         ts = 0.5
         self.gravity_compensation = m * -9.81  # Estimate gravity disturbance based on current joint position
         wn = 5.3/(ts*xi)
-        self.kp = wn**2 * m
-        self.kd = 2*xi*wn*m - b
+        self.kp = wn**2 * j - self.gravity_compensation
+        self.kd = 2*xi*wn*j - b
 
         self.get_logger().info(
             f'Calculated PD parameters for joint "{self.tracked_joint_name}": '
