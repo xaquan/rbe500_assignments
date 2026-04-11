@@ -34,7 +34,7 @@ effort = pd_output + mg  # Compensate for estimated gravity disturbance
 ##  To build the package:
 ```bash
 source /opt/ros/humble/setup.bash
-colcon build --packages-select assign2
+colcon build --packages-select assign2 assignment_interfaces
 source install/setup.bash
 ```
 ## To launch Gazebo
