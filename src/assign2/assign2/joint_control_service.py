@@ -163,9 +163,9 @@ class JointControlService(Node):
         b = 1
         xi = 1
         ts = 0.5
-        self.gravity_compensation = m * -9.81  # Estimate gravity disturbance based on current joint position
+        self.gravity_compensation = m * 9.81  # Estimate gravity disturbance based on current joint position
         wn = 5.3/(ts*xi)
-        self.kp = wn**2 * j - self.gravity_compensation
+        self.kp = wn**2 * j + self.gravity_compensation
         self.kd = 2*xi*wn*j - b
 
         self.get_logger().info(
@@ -198,7 +198,7 @@ class JointControlService(Node):
         effort = kp * error + kd * derivative
         self._pre_error = error
 
-        return effort + disturbance
+        return effort - disturbance
 
 
 def main(args=None):
