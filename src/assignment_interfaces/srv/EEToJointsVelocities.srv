@@ -1,0 +1,5 @@
+# Request: End of effector velocities
+float64[] ee_velocities
+---
+# Response: Joint velocities (3 joints)
+float64[] joints_velocities

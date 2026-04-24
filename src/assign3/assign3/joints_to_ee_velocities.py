@@ -22,7 +22,7 @@ class JointsToEeVelocitiesService(Node):
         )        
 
     def _handle_request(self, request, response):
-        velocities = request.joint_velocities
+        velocities = request.joints_velocities
         self.get_logger().info(f"Received joint velocities: {velocities}")
         response.ee_velocities = self.joints_to_ee_velocities(velocities)
         return response 

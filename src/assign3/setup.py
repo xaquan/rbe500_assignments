@@ -43,7 +43,7 @@ setup(
             'joint_control_service = assign3.joint_control_service:main',        
             'joint_control_client = assign3.joint_control_client:main',
             'joints_to_ee_velocities_service = assign3.joints_to_ee_velocities:main',
-            'ee_to_joints_velocities_service = assign3.ee_to_joint_velocities:main',
+            'ee_to_joints_velocities_service = assign3.ee_to_joints_velocities:main',
         ],
     },
 )

@@ -24,7 +24,7 @@ class EeToJointsVelocitiesService(Node):
     def _handle_request(self, request, response):
         velocities = request.ee_velocities
         self.get_logger().info(f"Received EE velocities: {velocities}")
-        response.joint_velocities = self.ee_to_joints_velocities(velocities)
+        response.joints_velocities = self.ee_to_joints_velocities(velocities)
         return response 
     
     def ee_to_joints_velocities(self, ee_velocities):
