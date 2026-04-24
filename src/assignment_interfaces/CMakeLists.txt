@@ -6,6 +6,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetJointPosition.srv"
+  "srv/JointsToEEVelocities.srv"
+  "srv/EEToJointsVelocities.srv"
 )
 
 ament_export_dependencies(rosidl_default_runtime)

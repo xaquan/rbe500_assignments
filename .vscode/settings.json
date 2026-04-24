@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "/code/RBE500_assignments/src/assign1_interfaces"
+    "cmake.sourceDirectory": "/code/RBE500_assignments/src/assign1_interfaces",
+    "remote.autoForwardPortsFallback": 0
 }
