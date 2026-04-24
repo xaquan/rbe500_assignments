@@ -82,6 +82,14 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+    ee_to_joints_velocities_service = Node(
+        package=package_name,
+        executable='ee_to_joints_velocities_service',
+        name='ee_to_joints_velocities_service_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+
     return LaunchDescription([
         SetEnvironmentVariable(
             'GZ_SIM_RESOURCE_PATH',
@@ -103,5 +111,6 @@ def generate_launch_description():
         joint_state_bridge,
         apply_joint_force_bridge,
         joint_control_service,
-        joints_to_ee_velocities_service
+        joints_to_ee_velocities_service,
+        ee_to_joints_velocities_service
     ])
