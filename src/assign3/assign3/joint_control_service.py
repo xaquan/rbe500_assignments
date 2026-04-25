@@ -15,21 +15,55 @@ class JointControlService(Node):
     def __init__(self):
         super().__init__('joint_control_service')
 
+        self.declare_parameter('control_mode', 'velocity')
+        self.control_mode = self.get_parameter('control_mode').get_parameter_value().string_value
+
+        self.get_logger().info(
+            'Initializing Joint Control Service with parameters: '
+            f'control_mode="{self.control_mode}"'
+        )
+
+        self.robot_configuration = {
+            'm1j': 10,
+            'm1l': 5,
+            'm2j': 5,
+            'm2l': 5,
+            'm3': 11,
+            'r': 0.1,
+            'a1': 0.45,
+            'a2': 0.35
+        }
+
         # command_topic = '/model/scara_robot/joint/joint3/cmd_force'
         joint_states_topic = "/joint_states"
         service_name = "set_joint_position"
+
+        self.PD_params_joint1 = {
+            'kp': 0.0,
+            'kd': 0.0,
+        }
+
+        self.PD_params_joint2 = {
+            'kp': 0.0,
+            'kd': 0.0,
+        }
+
+        self.PD_params_joint3 = {
+            'kp': 0.0,
+            'kd': 0.0,
+        }
+
+        self.PD_params = [self.PD_params_joint1, self.PD_params_joint2, self.PD_params_joint3]
         
-        self.kp = 0.0
-        self.kd = 0.0
-        self.dt = 0.0
+        self.joint_names = ['joint1', 'joint2', 'joint3']
         self.gravity_compensation = 0.0
 
         self.last_joint_state_stamp = None
         self.tracked_joint_name = None
         self.joint_positions = {}
-        self.joint_current_position = None
-        self.target_joint_position = None
-        self._pre_error = 0.0
+        self.joint_current_positions = [None, None, None]
+        self.target_joint_positions = [0.0, 0.0, 0.0]
+        self._pre_errors = [0.0, 0.0, 0.0]
         # self.disturbance = 10 * 9.81  # Estimate gravity disturbance based on current joint position
         self.active_goal = False
         self.tolerance = 0.002
@@ -37,10 +71,11 @@ class JointControlService(Node):
         self.filepath = None
         self.clock = Clock()
         self._effort_pub = {}
-
-        self._calculate_pd_parameters_joint3()
-
-        # self._effort_pub['joint3'] = self.create_publisher(Float64, command_topic.replace('{joint_name}', 'joint3'), 10)
+        self._velocity_pub = {}
+        
+        # if self.control_mode == 'force' and self._effort_pub or self.control_mode == 'velocity' and self._velocity_pub:
+        #     self.get_logger().info('Publishers already created, skipping publisher creation')
+        self._create_joints_cmd_publisher()
 
         self._joint_state_sub = self.create_subscription(
             JointState,
@@ -56,6 +91,7 @@ class JointControlService(Node):
             f"joint_states='{joint_states_topic}''"
         )
 
+        # Record position data for analysis
         self.create_data_file()  # Create new data file for logging position data
 
         self.log_queue = queue.Queue()
@@ -71,37 +107,44 @@ class JointControlService(Node):
                 f.write(data + '\n')
 
     # Create publishers for each joint, if self._joint_pubs is empty, create publishers for all joints in self.joint_positions
-    def _create_publisher(self,  joint_names):
-        if not self._effort_pub:
-            for joint_name in joint_names:
-                topic = f'/model/scara_robot/joint/{joint_name}/cmd_force'
-                self._effort_pub[joint_name] = self.create_publisher(Float64, topic, 10)
-                self.get_logger().info(f'Created publisher for joint "{joint_name}" on topic "{topic}"')
+    def _create_joints_cmd_publisher(self):
+        if self.control_mode == 'force' and not self._effort_pub:
+            for joint_name in self.joint_names:
+                effort_topic = f'/model/scara_robot/joint/{joint_name}/cmd_force'
+                self._effort_pub[joint_name] = self.create_publisher(Float64, effort_topic, 10)
+                self.get_logger().info(f'Created effort publisher for joint "{joint_name}" on topic "{effort_topic}"')
+        
+        if self.control_mode == 'velocity' and not self._velocity_pub:
+            for joint_name in self.joint_names:
+                vel_topic = f'/model/scara_robot/joint/{joint_name}/cmd_vel'
+                self._velocity_pub[joint_name] = self.create_publisher(Float64, vel_topic, 10)
+                self.get_logger().info(f'Created velocity publisher for joint "{joint_name}" on topic "{vel_topic}"')
 
-    def _joint_states_callback(self, msg: JointState) -> None:
+    def _joint_states_callback(self, msg: JointState) -> None: # Update PD parameters for joint1 based on current position of joint2
         stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         self.dt = stamp - self.last_joint_state_stamp if self.last_joint_state_stamp is not None else 0.0
         self.last_joint_state_stamp = stamp
 
-        self._create_publisher(msg.name)
-
         for name, position in zip(msg.name, msg.position):
             self.joint_positions[name] = float(position)
 
-        if self.tracked_joint_name in self.joint_positions:
-            self.joint_current_position = self.joint_positions[self.tracked_joint_name]
-
-            if self.active_goal:
-                # self.save_data()                
-                self._apply_effort()
+        for joint_name in self.joint_names:
+            self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_positions[joint_name]    
+        
+        if self.control_mode == 'force':
+            self._calculate_force_pd_params(self.joint_positions["joint2"]) 
+            self._apply_effort()
+        elif self.control_mode == 'velocity':
+            self._calculate_velocity_pd_params()
+            self._apply_velocity()
 
     # Publish current position and target position to a file for record analysis
     # format timestamp, current_position, target_position, error, effort
     def _save_position_data(self, error: float, effort: float):
         self.log_queue.put(
             f'{self.clock.now().nanoseconds},'
-            f'{self.joint_current_position:.4f},'
-            f'{self.target_joint_position:.4f},'
+            f'{self.joint_current_positions[0]:.4f},'
+            f'{self.target_joint_positions[0]:.4f},'
             f'{error:.4f},'
             f'{effort:.4f}'
         )
@@ -121,13 +164,13 @@ class JointControlService(Node):
         self.get_logger().info(f'Created new data file: {self.filepath}')
 
     def _set_goal(self, joint_name: str, target_position: float):
-        self.tracked_joint_name = joint_name
-        self.target_joint_position = target_position
-        self.joint_current_position = self.joint_positions[joint_name]
-        self._pre_error = 0.0
+        # self.tracked_joint_name = joint_name
+        self.target_joint_positions[self.joint_names.index(joint_name)] = target_position
+        self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_positions[joint_name]
+        self._pre_errors[self.joint_names.index(joint_name)] = 0.0
         self.active_goal = True
         self.get_logger().info(
-            f'Set new goal for joint "{joint_name}": target_position={target_position:.4f}'
+            f'Set new goal for joint "{self.joint_names}": target_position={self.target_joint_positions}'
         )
 
     def _handle_request(self, request, response):
@@ -152,38 +195,127 @@ class JointControlService(Node):
         response.joint_name = joint_name
         response.msg = (
             f'Accepted target for {joint_name}: '
-            f'current={self.joint_current_position:.4f}, '
-            f'target={self.target_joint_position:.4f}'
+            f'current={self.joint_current_positions[self.joint_names.index(joint_name)]:.4f}, '
+            f'target={self.target_joint_positions[self.joint_names.index(joint_name)]:.4f}'
         )
         return response
-    
-    def _calculate_pd_parameters_joint3(self):
-        m = 10
-        j = m
-        b = 1
-        xi = 1
-        ts = 0.5
-        self.gravity_compensation = m * 9.81  # Estimate gravity disturbance based on current joint position
-        wn = 5.3/(ts*xi)
-        self.kp = wn**2 * j + self.gravity_compensation
-        self.kd = 2*xi*wn*j - b
 
-        self.get_logger().info(
-            f'Calculated PD parameters for joint "{self.tracked_joint_name}": '
-            f'ts={ts:.4f}, xi={xi:.4f}, kp={self.kp:.4f}, kd={self.kd:.4f}, mg={self.gravity_compensation:.4f}, wn={wn:.4f}'
-        )
+    def _calculate_velocity_pd_params(self):
+        # For simplicity, we use fixed PD parameters for velocity control, but they can also be calculated based on the robot dynamics if needed
+        
+        self.PD_params[self.joint_names.index('joint1')]['kp'] = 10.0
+        self.PD_params[self.joint_names.index('joint1')]['kd'] = 2.0
+
+        self.PD_params[self.joint_names.index('joint2')]['kp'] = 5.0
+        self.PD_params[self.joint_names.index('joint2')]['kd'] = 1.0
+
+        self.PD_params[self.joint_names.index('joint3')]['kp'] = 2.0
+        self.PD_params[self.joint_names.index('joint3')]['kd'] = 0.0
+
+
+    def _calculate_force_pd_params(self, theta2: float):
+        self._calculate_pd_parameters_joint1(theta2)
+
+        # For simplicity, we use fixed PD parameters for joint2 and joint3, but they can also be calculated based on the robot dynamics if needed
+        if self.PD_params[self.joint_names.index('joint2')]['kp'] == 0.0 or self.PD_params[self.joint_names.index('joint2')]['kd'] == 0.0:
+            self._calculate_pd_parameters_joint2()
+
+        if self.PD_params[self.joint_names.index('joint3')]['kp'] == 0.0 or self.PD_params[self.joint_names.index('joint3')]['kd'] == 0.0:
+            self._calculate_pd_parameters_joint3()
+
+    def _pd_params_calculate(self, b, xi, ts, j, disturbance=0.0):
+        wn = 5.3/(ts*xi)
+        kp = wn**2 * j + disturbance
+        kd = 2*xi*wn*j - b
+        return kp, kd
+
+    def _calculate_pd_parameters_joint1(self, theta2: float):
+        m1j = self.robot_configuration['m1j']
+        m1l = self.robot_configuration['m1l']
+        m2j = self.robot_configuration['m2j']
+        m2l = self.robot_configuration['m2l']
+        m3 = self.robot_configuration['m3']
+        r = self.robot_configuration['r']
+        a1 = self.robot_configuration['a1']
+        a2 = self.robot_configuration['a2']
+        l1 = a1**2 + (a2/2)**2 + 2*a1*(a2/2)*math.cos(theta2)
+        l2 = a1**2 + a2**2 + 2*a1*a2*math.cos(theta2)
+
+        j1j = 1/2 * m1j * r**2
+        j1l = 1/3 * m1l * r**2
+        j2j = m2j * a1**2
+        j2l = m2l * l1**2
+        j3ee = m3 * l2**2
+
+        j = j1j + j1l + j2j + j2l + j3ee
+        # b = 1
+        # xi = 1
+        # ts = 2
+        # wn = 5.3/(ts*xi)
+        pd_params = self._pd_params_calculate(b=1, xi=1, ts=2, j=j)
+        self.PD_params[self.joint_names.index('joint1')]['kp'] = pd_params[0]
+        self.PD_params[self.joint_names.index('joint1')]['kd'] = pd_params[1]
+
+    def _calculate_pd_parameters_joint2(self):
+        
+        m2j = self.robot_configuration['m2j']
+        m2l = self.robot_configuration['m2l']
+        m3 = self.robot_configuration['m3']
+        r = self.robot_configuration['r']
+        a2 = self.robot_configuration['a2']
+        j2j = 1/2 * m2j * r**2
+        j2l = 1/3 * m2l * a2**2
+        j3ee = m3 * a2**2
+
+        j = j2j + j2l + j3ee
+
+        # b = 1
+        # xi = 1
+        # ts = 1
+        # wn = 5.3/(ts*xi)
+        pd_params = self._pd_params_calculate(b=1, xi=1, ts=1, j=j)
+        self.PD_params[self.joint_names.index('joint2')]['kp'] = pd_params[0]
+        self.PD_params[self.joint_names.index('joint2')]['kd'] = pd_params[1]
+
+    def _calculate_pd_parameters_joint3(self):
+        j = self.robot_configuration['m3']
+        # b = 1
+        # xi = 1
+        # ts = 0.5
+        self.gravity_compensation = j * 9.81  # Estimate gravity disturbance based on current joint position
+        # wn = 5.3/(ts*xi)
+        pd_params = self._pd_params_calculate(b=1, xi=1, ts=0.5, j=j, disturbance=self.gravity_compensation)
+        self.PD_params[self.joint_names.index('joint3')]['kp'] = pd_params[0]
+        self.PD_params[self.joint_names.index('joint3')]['kd'] = pd_params[1]
 
     def _apply_effort(self):
-                       
-        error = self.target_joint_position - self.joint_current_position
 
-        effort = self._PD_Controller(error, self.kp, self.kd, self.dt, self.gravity_compensation)
-        
-        self._publish_cmd_force(self.tracked_joint_name, effort)
-        self._save_position_data(error, effort)  
+        for joint_name in self.joint_names:
+            # Index of the joint in the current positions and target positions lists
+            i = self.joint_names.index(joint_name)
+            error = self.target_joint_positions[i] - self.joint_current_positions[i]
 
-        return False
-    
+            effort = self._PD_Controller(joint_name, error, self.PD_params[i]['kp'], self.PD_params[i]['kd'], self.dt, self.gravity_compensation if joint_name == 'joint3' else 0.0)
+            
+            # Publish effort command to the joint
+            self._publish_cmd_force(joint_name, effort)
+
+    def _apply_velocity(self):
+        for joint_name in self.joint_names:
+            # Index of the joint in the current positions and target positions lists
+            i = self.joint_names.index(joint_name)
+            error = self.target_joint_positions[i] - self.joint_current_positions[i]
+
+            velocity_command = self._PD_Controller(joint_name, error, self.PD_params[i]['kp'], self.PD_params[i]['kd'], self.dt)
+
+            # Publish velocity command to the joint
+            self._publish_cmd_velocity(joint_name, velocity_command)
+
+    def _publish_cmd_velocity(self, joint_name: str, velocity: float):
+        msg = Float64()
+        msg.data = velocity
+        self._velocity_pub[joint_name].publish(msg)
+
     # Publish effort command to the joint
     def _publish_cmd_force(self, joint_name: str, effort: float):
         msg = Float64()
@@ -191,12 +323,15 @@ class JointControlService(Node):
         self._effort_pub[joint_name].publish(msg)
 
     # PD controller
-    def _PD_Controller(self, error: float, kp: float, kd: float, dt: float, disturbance: float = 0.0) -> float:
+    def _PD_Controller(self, joint_name: str, error: float, kp: float, kd: float, dt: float, disturbance: float = 0.0) -> float:
        
-        derivative = (error - self._pre_error) / dt
+        if dt <= 0.0:
+            return 0.0
+       
+        derivative = (error - self._pre_errors[self.joint_names.index(joint_name)]) / dt
         # effort = self.kp * error + self.kd * derivative
         effort = kp * error + kd * derivative
-        self._pre_error = error
+        self._pre_errors[self.joint_names.index(joint_name)] = error
 
         return effort - disturbance
 

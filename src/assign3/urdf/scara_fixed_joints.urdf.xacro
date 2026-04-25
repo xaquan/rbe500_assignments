@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot name="scara_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:arg name="control_mode" default="velocity" />
 
     <!-- Joint colors-->
     <material name="blue">
@@ -48,13 +49,13 @@
     <xacro:property name="base_link_mass" value="100" />
 
     <!-- Joint 1 -->
-    <xacro:property name="joint1_lower" value="${-pi}" />
-    <xacro:property name="joint1_upper" value="${pi}" />
+    <xacro:property name="joint1_lower" value="${-7*pi/8}" />
+    <xacro:property name="joint1_upper" value="${7*pi/8}" />
 
     <!-- Joint 1 visual-->
     <xacro:property name="link1_l" value="${d1}" />
     <xacro:property name="link1_r" value="${cyl_joint_r}" />
-    <xacro:property name="link1_mass" value="1" />
+    <xacro:property name="link1_mass" value="10" />
 
     <!-- DH data of joint 1-->
     <xacro:property name="link1_theta" value="0" />
@@ -69,13 +70,13 @@
 
     
     <!-- Joint 1 -->
-    <xacro:property name="joint2_lower" value="${-pi}" />
-    <xacro:property name="joint2_upper" value="${pi}" />
+    <xacro:property name="joint2_lower" value="${-2*pi/3}" />
+    <xacro:property name="joint2_upper" value="${2*pi/3}" />
 
     <!-- Joint 2 visual-->
     <xacro:property name="link2_l" value="${cyl_joint_l}" />
     <xacro:property name="link2_r" value="${cyl_joint_r}" />
-    <xacro:property name="link2_mass" value="1" />
+    <xacro:property name="link2_mass" value="5" />
     <!-- DH data of joint 2-->
     <xacro:property name="link2_theta" value="0" />
     <xacro:property name="link2_d" value="0" />
@@ -85,7 +86,7 @@
     <xacro:property name="link2_arm_l" value="${a2}" />
     <xacro:property name="link2_arm_w" value="${link_arm_a}" />   
     <xacro:property name="link2_arm_h" value="${link_arm_a}" />
-    <xacro:property name="link2_arm_mass" value="4" />
+    <xacro:property name="link2_arm_mass" value="5" />
     
 
     <!-- Joint 3 -->
@@ -258,6 +259,7 @@
         <origin rpy="0 0 0" xyz="${a1} 0 ${d1}" />
         <limit lower="${joint2_lower}" upper="${joint2_upper}" effort="100" velocity="1.0" />
         <axis xyz="0 0 1" />
+        <dynamics damping="1" friction="0"/>
     </joint>
 
     <link name="link3">
@@ -354,19 +356,63 @@
     </gazebo> -->
 
     <gazebo>
+
+        
+
+    </gazebo>
+
+    <gazebo>
         <plugin
             filename="gz-sim-joint-state-publisher-system"
             name="gz::sim::systems::JointStatePublisher">
             <topic>/joint_states</topic>
         </plugin>
         
-        <plugin
-            filename="gz-sim-apply-joint-force-system"
-            name="gz::sim::systems::ApplyJointForce">
-            <joint_name>joint3</joint_name>
+        <!-- Force controllers -->
+        <xacro:if value="${'$(arg control_mode)' == 'force'}">
+            
+            <plugin
+                filename="gz-sim-apply-joint-force-system"
+                name="gz::sim::systems::ApplyJointForce">
+                <joint_name>joint1</joint_name>
+            </plugin>
+            <plugin
+                filename="gz-sim-apply-joint-force-system"
+                name="gz::sim::systems::ApplyJointForce">
+                <joint_name>joint2</joint_name>
+            </plugin>
+            <plugin
+                filename="gz-sim-apply-joint-force-system"
+                name="gz::sim::systems::ApplyJointForce">
+                <joint_name>joint3</joint_name>
         </plugin>
+        
+        </xacro:if> 
 
+        <!-- Velocity controllers -->
+        <xacro:if value="${'$(arg control_mode)' == 'velocity'}">
+            <plugin
+                filename="gz-sim-joint-controller-system"
+                name="gz::sim::systems::JointController">
+                <joint_name>joint1</joint_name>
+                <initial_velocity>0.0</initial_velocity>
+            </plugin>
 
+            <plugin
+                filename="gz-sim-joint-controller-system"
+                name="gz::sim::systems::JointController">
+                <joint_name>joint2</joint_name>
+                <initial_velocity>0.0</initial_velocity>
+            </plugin>
+
+            <plugin
+                filename="gz-sim-joint-controller-system"
+                name="gz::sim::systems::JointController">
+                <joint_name>joint3</joint_name>
+                <initial_velocity>0.0</initial_velocity>
+            </plugin>
+
+        </xacro:if>
         <plugin
             filename="gz-sim-pose-publisher-system"
             name="gz::sim::systems::PosePublisher">
@@ -378,8 +424,6 @@
             <publish_nested_model_pose>false</publish_nested_model_pose>
             <use_pose_vector_msg>true</use_pose_vector_msg>
         </plugin>
-
-        
         
     </gazebo>
 </robot>
