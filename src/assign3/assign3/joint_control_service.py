@@ -41,16 +41,22 @@ class JointControlService(Node):
         self.PD_params_joint1 = {
             'kp': 0.0,
             'kd': 0.0,
+            'ki': 0.0,
+            'd' : 0.0
         }
 
         self.PD_params_joint2 = {
             'kp': 0.0,
             'kd': 0.0,
+            'ki': 0.0,
+            'd' : 0.0
         }
 
         self.PD_params_joint3 = {
             'kp': 0.0,
             'kd': 0.0,
+            'ki': 0.0,
+            'd' : 0.0
         }
 
         self.PD_params = [self.PD_params_joint1, self.PD_params_joint2, self.PD_params_joint3]
@@ -60,10 +66,11 @@ class JointControlService(Node):
 
         self.last_joint_state_stamp = None
         self.tracked_joint_name = None
-        self.joint_positions = {}
+        self.joint_states_positions = [0.0, 0.0, 0.0]
         self.joint_current_positions = [None, None, None]
         self.target_joint_positions = [0.0, 0.0, 0.0]
         self._pre_errors = [0.0, 0.0, 0.0]
+        self._integrals = [0.0, 0.0, 0.0]
         # self.disturbance = 10 * 9.81  # Estimate gravity disturbance based on current joint position
         self.active_goal = False
         self.tolerance = 0.002
@@ -125,16 +132,26 @@ class JointControlService(Node):
         self.dt = stamp - self.last_joint_state_stamp if self.last_joint_state_stamp is not None else 0.0
         self.last_joint_state_stamp = stamp
 
-        for name, position in zip(msg.name, msg.position):
-            self.joint_positions[name] = float(position)
-
-        for joint_name in self.joint_names:
-            self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_positions[joint_name]    
         
         if self.control_mode == 'force':
-            self._calculate_force_pd_params(self.joint_positions["joint2"]) 
+            for i, position in enumerate(msg.position):
+                self.joint_states_positions[i] = float(position)
+                self.joint_current_positions[i] = float(position)
+
+            # for joint_name in self.joint_names:
+            #     self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_positions[joint_name]   
+
+            self._calculate_force_pd_params(self.joint_states_positions[self.joint_names.index('joint2')]) 
             self._apply_effort()
         elif self.control_mode == 'velocity':
+            
+            for i, velocity in enumerate(msg.velocity):
+                self.joint_states_positions[i] = float(velocity)
+                self.joint_current_positions[i] = float(velocity)
+
+            # for joint_name in self.joint_names:
+            #     self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_states_positions[joint_name]    
+
             self._calculate_velocity_pd_params()
             self._apply_velocity()
 
@@ -165,28 +182,24 @@ class JointControlService(Node):
 
     def _set_goal(self, joint_name: str, target_position: float):
         # self.tracked_joint_name = joint_name
-        self.target_joint_positions[self.joint_names.index(joint_name)] = target_position
-        self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_positions[joint_name]
-        self._pre_errors[self.joint_names.index(joint_name)] = 0.0
+        i = self.joint_names.index(joint_name)
+        self.target_joint_positions[i] = target_position
+        self.joint_current_positions[i] = self.joint_states_positions[i]
+        self._pre_errors[i] = 0.0
         self.active_goal = True
         self.get_logger().info(
-            f'Set new goal for joint "{self.joint_names}": target_position={self.target_joint_positions}'
+            f'Set new goal for joint "{self.joint_names[i]}": target_position={self.target_joint_positions}, current_position={self.joint_current_positions}'
         )
 
     def _handle_request(self, request, response):
         joint_name = request.joint_name.strip() or self.tracked_joint_name
+        self.tracked_joint_name = joint_name
         target_position = float(request.target_position)
 
         if not math.isfinite(target_position):
             response.status = False
             response.joint_name = joint_name
             response.msg = 'Invalid target_position value'
-            return response
-
-        if joint_name not in self.joint_positions:
-            response.status = False
-            response.joint_name = joint_name
-            response.msg = f'No joint state received yet for joint "{joint_name}"'
             return response
         
         self._set_goal(joint_name, target_position)
@@ -203,15 +216,18 @@ class JointControlService(Node):
     def _calculate_velocity_pd_params(self):
         # For simplicity, we use fixed PD parameters for velocity control, but they can also be calculated based on the robot dynamics if needed
         
-        self.PD_params[self.joint_names.index('joint1')]['kp'] = 10.0
-        self.PD_params[self.joint_names.index('joint1')]['kd'] = 2.0
+        self.PD_params[self.joint_names.index('joint1')]['kp'] = 200
+        self.PD_params[self.joint_names.index('joint1')]['kd'] = 0
+        self.PD_params[self.joint_names.index('joint1')]['ki'] = 10
 
-        self.PD_params[self.joint_names.index('joint2')]['kp'] = 5.0
-        self.PD_params[self.joint_names.index('joint2')]['kd'] = 1.0
+        self.PD_params[self.joint_names.index('joint2')]['kp'] = 200
+        self.PD_params[self.joint_names.index('joint2')]['kd'] = 0
+        self.PD_params[self.joint_names.index('joint2')]['ki'] = 70
 
-        self.PD_params[self.joint_names.index('joint3')]['kp'] = 2.0
-        self.PD_params[self.joint_names.index('joint3')]['kd'] = 0.0
-
+        self.PD_params[self.joint_names.index('joint3')]['kp'] = 10
+        self.PD_params[self.joint_names.index('joint3')]['kd'] = 1
+        self.PD_params[self.joint_names.index('joint3')]['ki'] = 0
+        self.PD_params[self.joint_names.index('joint3')]['d'] = -11  # Estimate gravity disturbance based on current joint position
 
     def _calculate_force_pd_params(self, theta2: float):
         self._calculate_pd_parameters_joint1(theta2)
@@ -248,11 +264,7 @@ class JointControlService(Node):
         j3ee = m3 * l2**2
 
         j = j1j + j1l + j2j + j2l + j3ee
-        # b = 1
-        # xi = 1
-        # ts = 2
-        # wn = 5.3/(ts*xi)
-        pd_params = self._pd_params_calculate(b=1, xi=1, ts=2, j=j)
+        pd_params = self._pd_params_calculate(b=1, xi=1, ts=0.5, j=j)
         self.PD_params[self.joint_names.index('joint1')]['kp'] = pd_params[0]
         self.PD_params[self.joint_names.index('joint1')]['kd'] = pd_params[1]
 
@@ -269,21 +281,13 @@ class JointControlService(Node):
 
         j = j2j + j2l + j3ee
 
-        # b = 1
-        # xi = 1
-        # ts = 1
-        # wn = 5.3/(ts*xi)
-        pd_params = self._pd_params_calculate(b=1, xi=1, ts=1, j=j)
+        pd_params = self._pd_params_calculate(b=1, xi=1, ts=0.5, j=j)
         self.PD_params[self.joint_names.index('joint2')]['kp'] = pd_params[0]
         self.PD_params[self.joint_names.index('joint2')]['kd'] = pd_params[1]
 
     def _calculate_pd_parameters_joint3(self):
         j = self.robot_configuration['m3']
-        # b = 1
-        # xi = 1
-        # ts = 0.5
         self.gravity_compensation = j * 9.81  # Estimate gravity disturbance based on current joint position
-        # wn = 5.3/(ts*xi)
         pd_params = self._pd_params_calculate(b=1, xi=1, ts=0.5, j=j, disturbance=self.gravity_compensation)
         self.PD_params[self.joint_names.index('joint3')]['kp'] = pd_params[0]
         self.PD_params[self.joint_names.index('joint3')]['kd'] = pd_params[1]
@@ -295,7 +299,7 @@ class JointControlService(Node):
             i = self.joint_names.index(joint_name)
             error = self.target_joint_positions[i] - self.joint_current_positions[i]
 
-            effort = self._PD_Controller(joint_name, error, self.PD_params[i]['kp'], self.PD_params[i]['kd'], self.dt, self.gravity_compensation if joint_name == 'joint3' else 0.0)
+            effort = self._PD_Controller(joint_name=joint_name, error=error, kp=self.PD_params[i]['kp'], kd=self.PD_params[i]['kd'], ki=self.PD_params[i]['ki'], dt=self.dt, disturbance=self.gravity_compensation if joint_name == 'joint3' else 0.0)
             
             # Publish effort command to the joint
             self._publish_cmd_force(joint_name, effort)
@@ -304,12 +308,24 @@ class JointControlService(Node):
         for joint_name in self.joint_names:
             # Index of the joint in the current positions and target positions lists
             i = self.joint_names.index(joint_name)
-            error = self.target_joint_positions[i] - self.joint_current_positions[i]
-
-            velocity_command = self._PD_Controller(joint_name, error, self.PD_params[i]['kp'], self.PD_params[i]['kd'], self.dt)
-
+            target = self.target_joint_positions[i]
+            current = self.joint_current_positions[i]
+            if target == 0.0:
+                velocity = 0.0
+            else:
+                error = target - current
+                velocity = self._PD_Controller(joint_name=joint_name, error=error, kp=self.PD_params[i]['kp'], kd=self.PD_params[i]['kd'], ki=self.PD_params[i]['ki'], dt=self.dt, disturbance=self.PD_params[i]['d'])
+                
+                if joint_name == self.tracked_joint_name:
+                    self.get_logger().info(
+                        f'Applying velocity control for joint "{joint_name}": '
+                        f'current_velocity={self.joint_current_positions[i]:.4f}, '
+                        f'target_velocity={self.target_joint_positions[i]:.4f}, '
+                        f'error={error:.4f}, '
+                        f'velocity_command={velocity:.4f}'
+                )
             # Publish velocity command to the joint
-            self._publish_cmd_velocity(joint_name, velocity_command)
+            self._publish_cmd_velocity(joint_name, velocity)
 
     def _publish_cmd_velocity(self, joint_name: str, velocity: float):
         msg = Float64()
@@ -323,15 +339,19 @@ class JointControlService(Node):
         self._effort_pub[joint_name].publish(msg)
 
     # PD controller
-    def _PD_Controller(self, joint_name: str, error: float, kp: float, kd: float, dt: float, disturbance: float = 0.0) -> float:
+    def _PD_Controller(self, joint_name: str, error: float, kp: float, kd: float, ki: float, dt: float, disturbance: float = 0.0) -> float:
        
         if dt <= 0.0:
             return 0.0
-       
-        derivative = (error - self._pre_errors[self.joint_names.index(joint_name)]) / dt
+        i = self.joint_names.index(joint_name)
+
+        derivative = (error - self._pre_errors[i]) / dt
+        integral = self._integrals[i] + error * dt
+        self._integrals[i] = integral
+        
         # effort = self.kp * error + self.kd * derivative
-        effort = kp * error + kd * derivative
-        self._pre_errors[self.joint_names.index(joint_name)] = error
+        effort = kp * error + kd * derivative + ki * integral
+        self._pre_errors[i] = error
 
         return effort - disturbance
 

@@ -26,11 +26,19 @@ ros2 topic pub --once /model/scara_robot/joint/joint3/cmd_vel std_msgs/msg/Float
 ## Part 1
 ### Test for joints to ee velocities
 ```bash
-ros2 service call /joints_to_ee_velocities_service assignment_interfaces/srv/JointsToEEVelocities "{joints_velocities: [-12.8304, 35.3642, 10.0000]}"
+ros2 service call /joints_to_ee_velocities_service assignment_interfaces/srv/JointsToEEVelocities "
+    {
+        joints_velocities: [-12.8304, 35.3642, 10.0000], 
+        current_positions: [1.05, 1.05, 0]
+    }"
 ```
 ### Test for ee to joint velocities
 ```bash
-ros2 service call /ee_to_joints_velocities_service assignment_interfaces/srv/EEToJointsVelocities "{ee_velocities: [5.0, 5.0, 10.0000]}"
+ros2 service call /ee_to_joints_velocities_service assignment_interfaces/srv/EEToJointsVelocities "
+    {
+        ee_velocities: [5.0, 5.0, 10.0000], 
+        current_positions: [1.05, 1.05, 0]
+    }"
 ```
 
 ## Part 2
@@ -78,6 +86,7 @@ Joint 2: Limit lower="-2.0943951023931953" upper="2.0943951023931953"
 Joint 3: The limit of the joint is 0.0-0.2 `downward`
 
 ```bash
-ros2 run assign3 joint_control_client joint1 0.1
-ros2 run assign3 joint_control_client joint2 0.1
-ros2 run assign3 joint_control_client joint3 0.1
+ros2 run assign3 joint_control_client joint1 1
+ros2 run assign3 joint_control_client joint2 1
+ros2 run assign3 joint_control_client joint3 1
+```

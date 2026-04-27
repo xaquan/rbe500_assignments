@@ -24,14 +24,10 @@ class EeToJointsVelocitiesService(Node):
     def _handle_request(self, request, response):
         velocities = request.ee_velocities
         self.get_logger().info(f"Received EE velocities: {velocities}")
-        response.joints_velocities = self.ee_to_joints_velocities(velocities)
+        response.joints_velocities = self.ee_to_joints_velocities(velocities, request.current_positions)
         return response 
     
-    def ee_to_joints_velocities(self, ee_velocities):
-        # Placeholder for the actual kinematic calculations
-        # In a real implementation, this would involve using the robot's kinematic model
-        # to compute the end-effector velocities based on the joint velocities.
-        positions = [np.pi/3, -np.pi/3, 0.0]
+    def ee_to_joints_velocities(self, ee_velocities, positions=[np.pi/3, -np.pi/3, 0.0]):
         joint_velocities = ScaraJacobianModel.ee_to_joints_velocities(ee_velocities, positions)
         res = [float(v) for v in joint_velocities]
         return res
