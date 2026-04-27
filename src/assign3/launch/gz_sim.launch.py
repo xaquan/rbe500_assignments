@@ -116,6 +116,16 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+        # Bridge for robot pose
+    pose_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '/model/scara_robot/pose@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
+        ],
+        output='screen'
+    )
+
     return LaunchDescription([
         control_mode_arg,
         SetEnvironmentVariable(
@@ -140,5 +150,6 @@ def generate_launch_description():
         apply_joints_velocity_bridge,
         joint_control_service,
         joints_to_ee_velocities_service,
-        ee_to_joints_velocities_service
+        ee_to_joints_velocities_service,
+        pose_bridge
     ])

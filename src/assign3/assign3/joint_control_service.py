@@ -7,6 +7,7 @@ import rclpy
 from rclpy.node import Clock, Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64
+from .models.scara_jacobian_model import ScaraJacobianModel
 
 from assignment_interfaces.srv import SetJointPosition
 
@@ -79,6 +80,7 @@ class JointControlService(Node):
         self.clock = Clock()
         self._effort_pub = {}
         self._velocity_pub = {}
+        self.move_linear = False
         
         # if self.control_mode == 'force' and self._effort_pub or self.control_mode == 'velocity' and self._velocity_pub:
         #     self.get_logger().info('Publishers already created, skipping publisher creation')
@@ -131,7 +133,6 @@ class JointControlService(Node):
         stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         self.dt = stamp - self.last_joint_state_stamp if self.last_joint_state_stamp is not None else 0.0
         self.last_joint_state_stamp = stamp
-
         
         if self.control_mode == 'force':
             for i, position in enumerate(msg.position):
@@ -148,12 +149,23 @@ class JointControlService(Node):
             for i, velocity in enumerate(msg.velocity):
                 self.joint_states_positions[i] = float(velocity)
                 self.joint_current_positions[i] = float(velocity)
-
-            # for joint_name in self.joint_names:
-            #     self.joint_current_positions[self.joint_names.index(joint_name)] = self.joint_states_positions[joint_name]    
+            
+            # Move linear if the tracked joint is "linear" and move_linear flag is not set
+            # for part 4
+            if self.move_linear:
+                self.move_linear_control()
 
             self._calculate_velocity_pd_params()
             self._apply_velocity()
+
+    def move_linear_control(self):
+        joint_velocities = ScaraJacobianModel.ee_to_joints_velocities([0, 1, 0], self.joint_states_positions)
+        joint_velocities = [float(v) for v in joint_velocities]
+
+        for joint_name in self.joint_names:
+            i = self.joint_names.index(joint_name)
+            velocity = joint_velocities[i]
+            self._set_goal(joint_name, velocity)
 
     # Publish current position and target position to a file for record analysis
     # format timestamp, current_position, target_position, error, effort
@@ -196,6 +208,13 @@ class JointControlService(Node):
         self.tracked_joint_name = joint_name
         target_position = float(request.target_position)
 
+        if joint_name == "linear":
+            self.move_linear = True
+            response.status = True
+            response.joint_name = joint_name
+            response.msg = 'Start liear velocity movement'
+            return response
+
         if not math.isfinite(target_position):
             response.status = False
             response.joint_name = joint_name
@@ -216,9 +235,9 @@ class JointControlService(Node):
     def _calculate_velocity_pd_params(self):
         # For simplicity, we use fixed PD parameters for velocity control, but they can also be calculated based on the robot dynamics if needed
         
-        self.PD_params[self.joint_names.index('joint1')]['kp'] = 200
+        self.PD_params[self.joint_names.index('joint1')]['kp'] = 100
         self.PD_params[self.joint_names.index('joint1')]['kd'] = 0
-        self.PD_params[self.joint_names.index('joint1')]['ki'] = 10
+        self.PD_params[self.joint_names.index('joint1')]['ki'] = 70
 
         self.PD_params[self.joint_names.index('joint2')]['kp'] = 200
         self.PD_params[self.joint_names.index('joint2')]['kd'] = 0
