@@ -175,7 +175,7 @@
         <origin rpy="0 0 0" xyz="0 0 ${link1_d}" />
         <axis xyz="0 0 1" />
         <limit lower="${joint1_lower}" upper="${joint1_upper}" effort="100" velocity="5.0" />
-        <dynamics damping="0.1" friction="100.0"/>
+        <dynamics damping="0.1" friction="0"/>
     </joint>
 
     <link name="link1">
@@ -259,7 +259,7 @@
         <origin rpy="0 0 0" xyz="${a1} 0 ${d1}" />
         <limit lower="${joint2_lower}" upper="${joint2_upper}" effort="100" velocity="1.0" />
         <axis xyz="0 0 1" />
-        <dynamics damping="1" friction="100"/>
+        <dynamics damping="1" friction="0"/>
     </joint>
 
     <link name="link3">
@@ -424,6 +424,5 @@
             <publish_nested_model_pose>false</publish_nested_model_pose>
             <use_pose_vector_msg>true</use_pose_vector_msg>
         </plugin>
-        
     </gazebo>
 </robot>
