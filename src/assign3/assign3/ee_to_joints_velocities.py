@@ -1,10 +1,8 @@
 import numpy as np
 
 import rclpy
-from rclpy.node import Clock, Node
-from .models.scara_kinematic_model import ScaraKinematicModel
+from rclpy.node import Node
 from .models.scara_jacobian_model import ScaraJacobianModel
-from geometry_msgs.msg import Pose
 
 from assignment_interfaces.srv import EEToJointsVelocities
 

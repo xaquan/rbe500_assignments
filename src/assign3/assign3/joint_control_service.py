@@ -193,7 +193,7 @@ class JointControlService(Node):
         self.get_logger().info(f'Created new data file: {self.filepath}')
 
     def _set_goal(self, joint_name: str, target_position: float):
-        # self.tracked_joint_name = joint_name
+        self.tracked_joint_name = joint_name
         i = self.joint_names.index(joint_name)
         self.target_joint_positions[i] = target_position
         self.joint_current_positions[i] = self.joint_states_positions[i]
@@ -205,14 +205,26 @@ class JointControlService(Node):
 
     def _handle_request(self, request, response):
         joint_name = request.joint_name.strip() or self.tracked_joint_name
-        self.tracked_joint_name = joint_name
         target_position = float(request.target_position)
 
+        if not joint_name:
+            response.status = False
+            response.joint_name = ''
+            response.msg = 'Joint name is required'
+            return response
+
         if joint_name == "linear":
+            self.tracked_joint_name = joint_name
             self.move_linear = True
             response.status = True
             response.joint_name = joint_name
             response.msg = 'Start liear velocity movement'
+            return response
+
+        if joint_name not in self.joint_names:
+            response.status = False
+            response.joint_name = joint_name
+            response.msg = f'Invalid joint_name "{joint_name}"'
             return response
 
         if not math.isfinite(target_position):
