@@ -218,7 +218,7 @@ class JointControlService(Node):
             self.move_linear = True
             response.status = True
             response.joint_name = joint_name
-            response.msg = 'Start liear velocity movement'
+            response.msg = 'Start linear velocity movement'
             return response
 
         if joint_name not in self.joint_names:
